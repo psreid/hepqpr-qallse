@@ -15,7 +15,8 @@ from hepqpr.qallse.dsmaker import create_dataset
 # ==== BUILD CONFIG
 
 loglevel = logging.DEBUG
-trackml_train_path = '~/git/quantum-annealing-project/trackml-data/train_100_events/'
+#trackml_train_path = '~/git/quantum-annealing-project/trackml-data/train_100_events/'
+trackml_train_path = '/Users/Parker/QMHEP/train_sample/'
 
 output_path = '/tmp/hpt-collapse'  # f'~/current/hpt-collapse
 
