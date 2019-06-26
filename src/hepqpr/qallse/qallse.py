@@ -51,7 +51,6 @@ class Config(ConfigBase):
     #: value of the bound.
     strength_bounds = None
 
-
 class Config1GeV(Config):
     tplet_max_curv = 8E-4  # (vs 5E-3)
     tplet_max_drz = 0.1  # (vs0.2)
@@ -67,7 +66,7 @@ class Qallse(QallseBase):
         self.hard_cuts_stats = ['type,hid,reason,arg1,arg2']
 
     def _get_base_config(self):
-        return Config1GeV() # TODO
+         return Config1GeV() # TODO
 
     def get_build_stats(self) -> pd.DataFrame:
         """Return a dataframe, each row corresponding to a real xplet that has been dropped during preprocessing."""
@@ -156,6 +155,9 @@ class Qallse(QallseBase):
         return ret
 
     # --------------- qubo weights
+    def give_weight(self, lin_bias = 0): #externally assign weight to be run in a loop
+         self.config.qubo_bias_weight = lin_bias
+         return self.config.qubo_bias_weight
 
     def _compute_weight(self, tplet: Triplet) -> float:
         # Just return a constant for now.
