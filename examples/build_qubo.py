@@ -21,8 +21,8 @@ from hepqpr.qallse import dumper
 
 loglevel = logging.DEBUG
 
-input_path = '/tmp/ez-0.1_hpt-1.0/event000001000-hits.csv'  # TODO change it !
-output_path = '/tmp'  # TODO change it
+input_path = '/home/preid/projects/def-doneil/preid/hepqpr-qallse/datasets/ds40/event000001000-hits.csv'  # TODO change it !
+output_path = '/home/preid/projects/def-doneil/preid/hepqpr-qallse/datasets/qubo_gens/'  # TODO change it
 
 model_class = QallseD0  # model class to use
 extra_config = dict()  # model config
