@@ -155,9 +155,6 @@ class Qallse(QallseBase):
         return ret
 
     # --------------- qubo weights
-    def give_weight(self, lin_bias = 0): #externally assign weight to be run in a loop
-         self.config.qubo_bias_weight = lin_bias
-         return self.config.qubo_bias_weight
 
     def _compute_weight(self, tplet: Triplet) -> float:
         # Just return a constant for now.
