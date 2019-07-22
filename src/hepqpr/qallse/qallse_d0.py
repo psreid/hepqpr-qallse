@@ -10,7 +10,7 @@ class D0Config(MpConfig):
     d0_denom = 1.0
     #: multiplier for the z0 part of the weight
     z0_factor = 0.2
-    #: denominator in the z0 exponent: exp(d0/d0_denom
+    #: denominator in the z0 exponent: exp(z0/z0_denom)
     z0_denom = 0.5
 
     #: longitudinal width of the luminous region. In trackml: 55mm
