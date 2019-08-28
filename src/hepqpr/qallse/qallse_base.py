@@ -1,14 +1,14 @@
 import itertools
 import logging
+from multiprocessing import Pool
 import sys
 import time
 from abc import ABC, abstractmethod
 from typing import Union
-
 import pandas as pd
 from dwave_qbsolv import QBSolv
 from .other.stdout_redirect import capture_stdout
-
+from memory_profiler import profile
 from .data_structures import *
 from .data_wrapper import DataWrapper
 from .utils import tracks_to_xplets
@@ -77,7 +77,8 @@ class QallseBase(ABC):
     def _get_base_config(self):
         # [ABSTRACT] Return an instance of a subclass of `ConfigBase` holding all model parameters
         pass
-
+        """Build multiprocessing here. Design map requires to haave same number of entries as doublets
+        """
     def build_model(self, doublets: Union[pd.DataFrame, List, np.array]):
         """
         Do the preprocessing, i.e. prepare everything so the QUBO can be generated.
@@ -88,15 +89,17 @@ class QallseBase(ABC):
         """
         start_time = time.process_time()
         self.hard_cuts_stats = self.hard_cuts_stats[:1]
-
+        #global initial_doublets
         initial_doublets = doublets.values if isinstance(doublets, pd.DataFrame) else doublets
 
+         #p = Pool()
         self._create_doublets(initial_doublets)
+        #self.doublets = multiprocess_doublets(initial_doublets)
+         #p.close()
         self._create_triplets()
         self._create_quadruplets()
 
         end_time = time.process_time() - start_time
-
         self.logger.info(
             f'Model built in {end_time:.2f}s. '
             f'doublets: {len(self.doublets)}/{len(self.qubo_doublets)}, '
@@ -104,7 +107,6 @@ class QallseBase(ABC):
             f'quadruplets: {len(self.quadruplets)}')
 
         return self
-
     def sample_qubo(self, Q: TQubo = None, return_time=False, logfile: str = None, seed: int=None, **qbsolv_params) -> Union[
         object, Tuple[object, float]]:
         """
@@ -150,27 +152,42 @@ class QallseBase(ABC):
         final_doublets = tracks_to_xplets(final_triplets)
         return np.unique(final_doublets, axis=0).tolist()
 
+    @classmethod
+    def multiprocess_doublets(cls, initial_doublets):
+        # from QallseBase import initial_doublets
+        # from .qallse_base import initial_doublets
+        doublets = []
+        for (start_id, end_id) in initial_doublets:
+            start, end = cls.hits[start_id], cls.hits[end_id]
+            d = Doublet(start, end)
+            if not cls._is_invalid_doublet(d):
+                start.outer.append(d)
+                end.inner.append(d)
+                doublets.append(d)
+        cls.doublets = doublets
+
     # ---------------------------------------------
 
     def _create_doublets(self, initial_doublets):
         # Generate Doublet structures from the initial doublets, calling _is_invalid_doublet to apply early cuts
         doublets = []
         for (start_id, end_id) in initial_doublets:
-            start, end = self.hits[start_id], self.hits[end_id]
-            d = Doublet(start, end)
+           # start, end = self.hits[start_id], self.hits[end_id]
+            d = Doublet(self.hits[start_id], self.hits[end_id])
             if not self._is_invalid_doublet(d):
-                start.outer.append(d)
-                end.inner.append(d)
+                self.hits[start_id].outer.append(d)
+                self.hits[end_id].inner.append(d)
                 doublets.append(d)
 
         self.logger.info(f'created {len(doublets)} doublets.')
         self.doublets = doublets
 
+
+
     @abstractmethod
     def _is_invalid_doublet(self, dblet: Doublet) -> bool:
         # [ABSTRACT] Apply early cuts on doublets, return True if the doublet should be discarded.
         pass
-
     def _create_triplets(self):
         # Generate Triplet structures from Doublets, calling _is_invalid_triplet to apply early cuts
         triplets = []
@@ -251,7 +268,6 @@ class QallseBase(ABC):
         pass
 
     # ---------------------------------------------
-
     def to_qubo(self, return_stats=False) -> Union[TQubo, Tuple[TQubo, Tuple[int, int, int]]]:
         """
         Generate the QUBO. Attention: ensure that :py:meth:~`build_model` has been called previously.
@@ -298,3 +314,20 @@ class QallseBase(ABC):
             return Q, (n_vars, n_incl_couplers, n_excl_couplers)
         else:
             return Q
+
+
+
+# Pickup later. Note that working outside the class is a nightmare
+"""def multiprocess_doublets(QallseBase,initial_doublets):
+    from hepqpr.qallse.qallse_base import QallseBase
+    #from QallseBase import initial_doublets
+    #from .qallse_base import initial_doublets
+    doublets = []
+    for (start_id, end_id) in initial_doublets:
+        start, end = QallseBase.hits[start_id], QallseBase.hits[end_id]
+        d = Doublet(start, end)
+        if not QallseBase._is_invalid_doublet(d):
+             start.outer.append(d)
+             end.inner.append(d)
+             doublets.append(d)
+    QallseBase.doublets = doublets"""
