@@ -11,7 +11,6 @@ import numpy as np
 from .type_alias import *
 from .utils import curvature, angle_diff
 
-
 class Volayer:
     """
     Support the encoding of a hit's `volume_id` and `layer_id` into one single number that can be used for
@@ -20,11 +19,19 @@ class Volayer:
 
     #: Define the mapping of `volume_id` and `layer_id` into one number (the index in the list)
     ordering = [(8, 2), (8, 4), (8, 6), (8, 8), (13, 2), (13, 4), (13, 6), (13, 8), (17, 2), (17, 4)]
+    
+    #: Define slices in z. Extreme values seem to be |x|=1083.4 but this is based on testing only... therefore using inf for last boundary
+    slices = [(-float("inf"),-800), (-800,-600), (-600,-400), (-400,-200), (-200,0), (0,200), (200,400), (400,600), (600,800), (800,float("inf"))]
 
     @classmethod
     def get_index(cls, volayer: Tuple[int, int]) -> int:
         """Convert a couple `volume_id`, `layer_id` into a number (see :py:attr:`~ordering`)."""
         return cls.ordering.index(tuple(volayer))
+    
+    @classmethod
+    def get_slice(cls, zval: float) -> int:
+        """Get z-slice index for hit (see :py:attr:`~slices`)."""
+        return cls.slices.index(list(filter(lambda sl: zval>sl[0] and zval<=sl[1], cls.slices))[0])
 
     @classmethod
     def difference(cls, volayer1, volayer2) -> int:
@@ -86,6 +93,7 @@ class Xplet:
         return d
 
 
+
 class Hit(Xplet):
     """One hit."""
 
@@ -97,16 +105,20 @@ class Hit(Xplet):
         self.hit_id: int = int(self.hit_id)
         #: The volayer
         self.volayer: int = Volayer.get_index((int(self.volume_id), int(self.layer_id)))
+        
+        #: The slice
+        self.slice: int = Volayer.get_slice(self.z)
 
         #: The coordinates in the X-Y plane, i.e. `(x,y)`
         self.coord_2d: Tuple[float, float] = np.array([self.x, self.y])
         #: The coordinates, i.e. `(x,y,z)`
         self.coord_3d: Tuple[float, float, float] = np.array([self.x, self.y, self.z])
-
+        
+        #FIXME obsolete?
         # TODO: remove if QallseCs is discarded from the project
         # test: second order conflicts
-        self.inner_tplets: List[Triplet] = []
-        self.outer_tplets: List[Triplet] = []
+        #self.inner_tplets: List[Triplet] = []
+        #self.outer_tplets: List[Triplet] = []
 
     def __str__(self):
         return str(self.hit_id)  # to avoid recursion
