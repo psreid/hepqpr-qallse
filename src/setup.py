@@ -44,6 +44,8 @@ setuptools.setup(
         'numpy>=1.14.0,<1.16.0',
         'pandas>=0.23,<0.24',
         'trackml',
+        'dimod>=0.8.0,<0.9.0',
+        'dwave-ocean-sdk',
         'dwave-qbsolv==0.2.10',
         'dwave-neal==0.4.5',
         'click==7.0',
