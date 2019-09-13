@@ -21,7 +21,9 @@ class Volayer:
     ordering = [(8, 2), (8, 4), (8, 6), (8, 8), (13, 2), (13, 4), (13, 6), (13, 8), (17, 2), (17, 4)]
     
     #: Define slices in z. Extreme values seem to be |x|=1083.4 but this is based on testing only... therefore using inf for last boundary
-    slices = [(-float("inf"),-800), (-800,-600), (-600,-400), (-400,-200), (-200,0), (0,200), (200,400), (400,600), (600,800), (800,float("inf"))]
+    z_slices = [(-float("inf"),-800), (-800,-600), (-600,-400), (-400,-200), (-200,0), (0,200), (200,400), (400,600), (600,800), (800,float("inf"))]
+    
+    phi_slices = [(0,0.5), (0.5,1), (1,1.5), (1.5,2)]
 
     @classmethod
     def get_index(cls, volayer: Tuple[int, int]) -> int:
@@ -29,9 +31,15 @@ class Volayer:
         return cls.ordering.index(tuple(volayer))
     
     @classmethod
-    def get_slice(cls, zval: float) -> int:
+    def get_z_slice(cls, zval: float) -> int:
         """Get z-slice index for hit (see :py:attr:`~slices`)."""
-        return cls.slices.index(list(filter(lambda sl: zval>sl[0] and zval<=sl[1], cls.slices))[0])
+        return cls.z_slices.index(list(filter(lambda sl: zval>sl[0] and zval<=sl[1], cls.z_slices))[0])
+    
+    @classmethod
+    def get_phi_slice(cls, xval: float, yval: float) -> int:
+        """Get phi-slice index for hit (see :py:attr:`~slices`)."""
+        phi=np.arctan2(yval,xval)/np.pi+1
+        return cls.phi_slices.index(list(filter(lambda sl: phi>sl[0] and phi<=sl[1], cls.phi_slices))[0])
 
     @classmethod
     def difference(cls, volayer1, volayer2) -> int:
@@ -106,9 +114,10 @@ class Hit(Xplet):
         #: The volayer
         self.volayer: int = Volayer.get_index((int(self.volume_id), int(self.layer_id)))
         
-        #: The slice
-        self.slice: int = Volayer.get_slice(self.z)
-
+        #: The slices
+        self.phi_slice: int = Volayer.get_phi_slice(self.x,self.y)
+        self.z_slice: int = Volayer.get_z_slice(self.z)
+        
         #: The coordinates in the X-Y plane, i.e. `(x,y)`
         self.coord_2d: Tuple[float, float] = np.array([self.x, self.y])
         #: The coordinates, i.e. `(x,y,z)`
