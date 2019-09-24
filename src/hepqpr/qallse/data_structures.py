@@ -11,6 +11,7 @@ import numpy as np
 from .type_alias import *
 from .utils import curvature, angle_diff
 
+
 class Volayer:
     """
     Support the encoding of a hit's `volume_id` and `layer_id` into one single number that can be used for
@@ -113,7 +114,8 @@ class Hit(Xplet):
         self.hit_id: int = int(self.hit_id)
         #: The volayer
         self.volayer: int = Volayer.get_index((int(self.volume_id), int(self.layer_id)))
-        
+
+        #: TODO allow xplets to have multiple slice indices for overlapping slices
         #: The slices
         self.phi_slice: int = Volayer.get_phi_slice(self.x,self.y)
         self.z_slice: int = Volayer.get_z_slice(self.z)
@@ -142,6 +144,9 @@ class Doublet(Xplet):
         """
         assert hit_start != hit_end
         assert hit_start.r <= hit_end.r
+        #:FIXME Assert statements do not handle sliced region overlap
+        assert hit_start.phi_slice == hit_end.phi_slice
+        assert hit_start.z_slice == hit_end.z_slice
 
         super().__init__([hit_start, hit_end], Triplet)
         #: The hits composing this doublet
@@ -150,6 +155,10 @@ class Doublet(Xplet):
         self.dr = hit_end.r - hit_start.r
         #: The delta z of the doublet
         self.dz = hit_end.z - hit_start.z
+
+        #: The slice in which the doublet belongs to
+        self.phi_slice = hit_start.phi_slice
+        self.z_slice = hit_start.z_slice
 
         #: The angle in the R-Z plane between this doublet and the R axis.
         self.rz_angle = math.atan2(self.dz, self.dr)
@@ -170,10 +179,18 @@ class Triplet(Xplet):
         super().__init__([d1.h1, d2.h1, d2.h2], Quadruplet)
         assert d1.hits[-1] == d2.hits[0]
         assert d1.h1.r < d2.h2.r
+        #: FIXME Assert statements do not handle sliced region overlap
+        assert d1.phi_slice == d2.phi_slice
+        assert d1.z_slice == d2.z_slice
 
         self.d1: Doublet = d1
         self.d2: Doublet = d2
 
+        #: The slice in which the triplet belongs to
+        self.phi_slice = d1.phi_slice
+        self.z_slice = d1.z_slice
+
+        #: TODO Identifiy differences between implied helix curvature and menger curvature for impact parameter performance
         #: Radius of curvature, see `Menger curvature <https://en.wikipedia.org/wiki/Menger_curvature>`_.
         self.curvature = curvature(*[h.coord_2d for h in self.hits])
         #: Difference between the doublet's rz angles (see :py:attr:~`Doublet.rz_angle`)
@@ -197,10 +214,18 @@ class Quadruplet(Xplet):
         * `t1` and `t2` share two hits/one doublet: `t1.hits[-2:] == t2.hits[:2]` and `t1.d2 == t2.d1`
         """
         assert t1.d2 == t2.d1
+        #:FIXME Unsure if required to have the same slices, Slices incompatable with overlapping regions
+        assert t1.phi_slice == t2.phi_slice
+        assert t1.z_slice == t2.z_slice
+
         super().__init__(t1.hits + [h for h in t2.hits if h not in t1.hits])
 
         self.t1: Triplet = t1
         self.t2: Triplet = t2
+
+        #: The slice in which the triplet belongs to
+        self.phi_slice = t1.phi_slice
+        self.z_slice = t1.z_slice
 
         #: Absolute difference between the two triplets' curvatures
         self.delta_curvature = abs(self.t1.curvature - self.t2.curvature)
@@ -213,4 +238,5 @@ class Quadruplet(Xplet):
 
     def doublets(self) -> List[Doublet]:
         """Return the ordered list of doublets composing this triplet."""
+        #: Does this need to be reworked with the slicing algorithm?
         return self.t1.doublets() + [self.t2.d2]

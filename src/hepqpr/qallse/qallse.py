@@ -1,5 +1,5 @@
 import pandas as pd
-
+from memory_profiler import profile
 from .data_structures import *
 from .qallse_base import ConfigBase, QallseBase
 from .utils import pd_read_csv_array
@@ -96,12 +96,21 @@ class Qallse(QallseBase):
         # Apply hard cuts on doublets.
         # Currently, doublets are only dropped if they miss more than one layer.
 
-        v1, v2 = dblet.h1.volayer, dblet.h2.volayer
-        ret = v1 >= v2 or v2 > v1 + self.config.max_layer_span
-        if ret and self.dataw.is_real_doublet(dblet.hit_ids()) == XpletType.REAL:
-            self.hard_cuts_stats.append(f'dblet,{dblet},volayer,{v1},{v2}')
-            return not self.config.cheat
-        return ret
+        #: Apply criteria that hits must originate from the same slice first
+
+        zs1, zs2 = dblet.h1.z_slice, dblet.h2.z_slice
+        ps1, ps2 = dblet.h1.phi_slice, dblet.h2.phi_slice
+
+        if ps1 == ps2 and zs1 == zs2:
+
+            v1, v2 = dblet.h1.volayer, dblet.h2.volayer
+            ret = v1 >= v2 or v2 > v1 + self.config.max_layer_span
+            if ret and self.dataw.is_real_doublet(dblet.hit_ids()) == XpletType.REAL:
+                self.hard_cuts_stats.append(f'dblet,{dblet},volayer,{v1},{v2}')
+                return not self.config.cheat
+            return ret
+        else:
+            return False
 
     def _is_invalid_triplet(self, tplet: Triplet) -> bool:
         # Apply hard cuts on triplets.

@@ -43,7 +43,6 @@ class QallseD0(QallseMp):
                   self.config.z0_factor * (1.0 - np.exp(-abs(tplet.z0) / self.config.z0_denom))
 
         return tplet.w
-
     def _compute_impact_params_for(self, tplet: Triplet) -> (float, float):
         #: compute d0 and z0 for a given triplet.
 
