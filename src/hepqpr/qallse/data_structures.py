@@ -22,9 +22,10 @@ class Volayer:
     ordering = [(8, 2), (8, 4), (8, 6), (8, 8), (13, 2), (13, 4), (13, 6), (13, 8), (17, 2), (17, 4)]
     
     #: Define slices in z. Extreme values seem to be |x|=1083.4 but this is based on testing only... therefore using inf for last boundary
-    z_slices = [(-float("inf"),-800), (-800,-600), (-600,-400), (-400,-200), (-200,0), (0,200), (200,400), (400,600), (600,800), (800,float("inf"))]
-    
-    phi_slices = [(0,0.5), (0.5,1), (1,1.5), (1.5,2)]
+    #eta_slices = [(-float("inf"),-800), (-800,-600), (-600,-400), (-400,-200), (-200,0), (0,200), (200,400), (400,600), (600,800), (800,float("inf"))]
+    eta_slices = [(-float("inf"), -3), (-3, -2), (-2, -1), (-1, 1), (1, 2), (2, 3), (3, float("inf"))]
+    #eta_slices = [(-float("inf"), float("inf"))]
+    phi_slices = [(0, 0.5), (0.5, 1), (1, 1.5), (1.5, 2)]
 
     @classmethod
     def get_index(cls, volayer: Tuple[int, int]) -> int:
@@ -32,9 +33,14 @@ class Volayer:
         return cls.ordering.index(tuple(volayer))
     
     @classmethod
-    def get_z_slice(cls, zval: float) -> int:
-        """Get z-slice index for hit (see :py:attr:`~slices`)."""
-        return cls.z_slices.index(list(filter(lambda sl: zval>sl[0] and zval<=sl[1], cls.z_slices))[0])
+    def get_eta_slice(cls, zval: float,  xval: float, yval: float) -> int:
+
+        # eta = -ln tan(r/z  * 0.5)
+        print(xval, yval, zval)
+        print((-1)*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/zval * 0.5))))
+        eta = (-1)*(zval/np.abs(zval))*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/(zval) * 0.5)))
+        """Get eta-slice index for hit (see :py:attr:`~slices`)."""
+        return cls.eta_slices.index(list(filter(lambda sl: eta>sl[0] and eta<=sl[1], cls.eta_slices))[0])
     
     @classmethod
     def get_phi_slice(cls, xval: float, yval: float) -> int:
@@ -117,8 +123,8 @@ class Hit(Xplet):
 
         #: TODO allow xplets to have multiple slice indices for overlapping slices
         #: The slices
-        self.phi_slice: int = Volayer.get_phi_slice(self.x,self.y)
-        self.z_slice: int = Volayer.get_z_slice(self.z)
+        self.phi_slice: int = Volayer.get_phi_slice(self.x, self.y)
+        self.eta_slice: int = Volayer.get_eta_slice(self.z, self.x, self.y)
         
         #: The coordinates in the X-Y plane, i.e. `(x,y)`
         self.coord_2d: Tuple[float, float] = np.array([self.x, self.y])
@@ -144,9 +150,6 @@ class Doublet(Xplet):
         """
         assert hit_start != hit_end
         assert hit_start.r <= hit_end.r
-        #:FIXME Assert statements do not handle sliced region overlap
-        assert hit_start.phi_slice == hit_end.phi_slice
-        assert hit_start.z_slice == hit_end.z_slice
 
         super().__init__([hit_start, hit_end], Triplet)
         #: The hits composing this doublet
@@ -157,8 +160,8 @@ class Doublet(Xplet):
         self.dz = hit_end.z - hit_start.z
 
         #: The slice in which the doublet belongs to
-        self.phi_slice = hit_start.phi_slice
-        self.z_slice = hit_start.z_slice
+        self.phi_slice = hit_end.phi_slice
+        self.eta_slice = hit_end.eta_slice
 
         #: The angle in the R-Z plane between this doublet and the R axis.
         self.rz_angle = math.atan2(self.dz, self.dr)
@@ -179,16 +182,13 @@ class Triplet(Xplet):
         super().__init__([d1.h1, d2.h1, d2.h2], Quadruplet)
         assert d1.hits[-1] == d2.hits[0]
         assert d1.h1.r < d2.h2.r
-        #: FIXME Assert statements do not handle sliced region overlap
-        assert d1.phi_slice == d2.phi_slice
-        assert d1.z_slice == d2.z_slice
 
         self.d1: Doublet = d1
         self.d2: Doublet = d2
 
         #: The slice in which the triplet belongs to
-        self.phi_slice = d1.phi_slice
-        self.z_slice = d1.z_slice
+        self.phi_slice = d2.phi_slice
+        self.eta_slice = d2.eta_slice
 
         #: TODO Identifiy differences between implied helix curvature and menger curvature for impact parameter performance
         #: Radius of curvature, see `Menger curvature <https://en.wikipedia.org/wiki/Menger_curvature>`_.
@@ -214,18 +214,15 @@ class Quadruplet(Xplet):
         * `t1` and `t2` share two hits/one doublet: `t1.hits[-2:] == t2.hits[:2]` and `t1.d2 == t2.d1`
         """
         assert t1.d2 == t2.d1
-        #:FIXME Unsure if required to have the same slices, Slices incompatable with overlapping regions
-        assert t1.phi_slice == t2.phi_slice
-        assert t1.z_slice == t2.z_slice
 
         super().__init__(t1.hits + [h for h in t2.hits if h not in t1.hits])
 
         self.t1: Triplet = t1
         self.t2: Triplet = t2
 
-        #: The slice in which the triplet belongs to
+        #: The slice in which the quadruplet belongs to
         self.phi_slice = t1.phi_slice
-        self.z_slice = t1.z_slice
+        self.eta_slice = t1.eta_slice
 
         #: Absolute difference between the two triplets' curvatures
         self.delta_curvature = abs(self.t1.curvature - self.t2.curvature)
