@@ -98,10 +98,10 @@ class Qallse(QallseBase):
 
         #: Apply criteria that hits must originate from the same slice first
 
-        zs1, zs2 = dblet.h1.z_slice, dblet.h2.z_slice
+        etas1, etas2 = dblet.h1.eta_slice, dblet.h2.eta_slice
         ps1, ps2 = dblet.h1.phi_slice, dblet.h2.phi_slice
 
-        if ps1 == ps2 and zs1 == zs2:
+        if ps1 == ps2 and etas1 == etas2:
 
             v1, v2 = dblet.h1.volayer, dblet.h2.volayer
             ret = v1 >= v2 or v2 > v1 + self.config.max_layer_span
@@ -110,7 +110,7 @@ class Qallse(QallseBase):
                 return not self.config.cheat
             return ret
         else:
-            return False
+            return True
 
     def _is_invalid_triplet(self, tplet: Triplet) -> bool:
         # Apply hard cuts on triplets.
@@ -119,28 +119,36 @@ class Qallse(QallseBase):
         # * the radius of the curvature formed by the three hits (cut on GeV)
         # * how well are the two doublets aligned in the R-Z plane
 
-        is_real = self.dataw.is_real_xplet(tplet.hit_ids()) == XpletType.REAL
+        #: Apply criteria that hits must originate from the same slice first
 
-        # layer skips
-        volayer_skip = tplet.hits[-1].volayer - tplet.hits[0].volayer
-        if volayer_skip > self.config.max_layer_span + 1:
-            if is_real:
-                self.hard_cuts_stats.append(f'tplet,{tplet},volayer,{volayer_skip},')
-                return not self.config.cheat
+        etas1, etas2 = tplet.d1.eta_slice, tplet.d2.eta_slice
+        ps1, ps2 = tplet.d1.phi_slice, tplet.d2.phi_slice
+
+        if ps1 == ps2 and etas1 == etas2:
+            is_real = self.dataw.is_real_xplet(tplet.hit_ids()) == XpletType.REAL
+
+            # layer skips
+            volayer_skip = tplet.hits[-1].volayer - tplet.hits[0].volayer
+            if volayer_skip > self.config.max_layer_span + 1:
+                if is_real:
+                    self.hard_cuts_stats.append(f'tplet,{tplet},volayer,{volayer_skip},')
+                    return not self.config.cheat
+                return True
+            # radius of curvature formed by the three hits
+            if abs(tplet.curvature) > self.config.tplet_max_curv:
+                if is_real:
+                    self.hard_cuts_stats.append(f'tplet,{tplet},curv,{tplet.curvature},')
+                    return not self.config.cheat
+                return True
+            # angle between the two doublets in the rz plane
+            if tplet.drz > self.config.tplet_max_drz:
+                if is_real:
+                    self.hard_cuts_stats.append(f'tplet,{tplet},drz,{tplet.drz},')
+                    return not self.config.cheat
+                return True
+            return False
+        else:
             return True
-        # radius of curvature formed by the three hits
-        if abs(tplet.curvature) > self.config.tplet_max_curv:
-            if is_real:
-                self.hard_cuts_stats.append(f'tplet,{tplet},curv,{tplet.curvature},')
-                return not self.config.cheat
-            return True
-        # angle between the two doublets in the rz plane
-        if tplet.drz > self.config.tplet_max_drz:
-            if is_real:
-                self.hard_cuts_stats.append(f'tplet,{tplet},drz,{tplet.drz},')
-                return not self.config.cheat
-            return True
-        return False
 
     def _is_invalid_quadruplet(self, qplet: Quadruplet) -> bool:
         # Apply hard cuts on quadruplets.
@@ -149,19 +157,26 @@ class Qallse(QallseBase):
         # layer miss, R-Z plane delta angles and curvature) and apply a cut on it.
         is_real = self.dataw.is_real_xplet(qplet.hit_ids()) == XpletType.REAL
 
-        # delta delta curvature between the two triplets
-        ret = qplet.delta_curvature > self.config.qplet_max_dcurv
-        if ret and is_real:
-            self.hard_cuts_stats.append(f'qplet,{qplet},dcurv,{qplet.delta_curvature},')
-            return not self.config.cheat
+        #: apply slicing criteria
+        etas1, etas2 = qplet.t1.eta_slice, qplet.t2.eta_slice
+        ps1, ps2 = qplet.t1.phi_slice, qplet.t2.phi_slice
 
-        # strength of the quadruplet
-        qplet.strength = self._compute_strength(qplet)
-        ret = qplet.strength > self.config.qplet_max_strength
-        if ret and is_real:
-            self.hard_cuts_stats.append(f'qplet,{qplet},strength,{qplet.strength},')
-            return not self.config.cheat
-        return ret
+        if ps1 == ps2 and etas1 == etas2:
+            # delta delta curvature between the two triplets
+            ret = qplet.delta_curvature > self.config.qplet_max_dcurv
+            if ret and is_real:
+                self.hard_cuts_stats.append(f'qplet,{qplet},dcurv,{qplet.delta_curvature},')
+                return not self.config.cheat
+
+            # strength of the quadruplet
+            qplet.strength = self._compute_strength(qplet)
+            ret = qplet.strength > self.config.qplet_max_strength
+            if ret and is_real:
+                self.hard_cuts_stats.append(f'qplet,{qplet},strength,{qplet.strength},')
+                return not self.config.cheat
+            return ret
+        else:
+            return True
 
     # --------------- qubo weights
 

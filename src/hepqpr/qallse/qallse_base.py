@@ -271,63 +271,62 @@ class QallseBase(ABC):
     def to_qubo(self, return_stats=False) -> Union[TQubo, Tuple[TQubo, Tuple[int, int, int]]]:
         """
         Generate the QUBO. Attention: ensure that :py:meth:~`build_model` has been called previously.
-        :param return_stats: if set, also return the number of variables and coulpers.
+        :param return_stats: if set, also return the number of variables and couplers.
         :return: either the QUBO, or a tuple (QUBO, (n_vars, n_incl_couplers, n_excl_couplers))
         """
 
         Q = {}
+        qubo_list = [[{} for i in range(len(Volayer.phi_slices))] for j in range(len(Volayer.eta_slices))]
         hits, doublets, triplets = self.qubo_hits, self.qubo_doublets, self.qubo_triplets
         quadruplets = self.quadruplets
-
         start_time = time.process_time()
-        # 1: qbits with their weight (doublets with a common weight)
-        for q in triplets:
-            q.weight = self._compute_weight(q)
-            Q[(str(q), str(q))] = q.weight
-        n_vars = len(Q)
+        print(len(Volayer.eta_slices), len(Volayer.phi_slices))
+        for eta in range(len(Volayer.eta_slices)):
+            for phi in range(len(Volayer.phi_slices)):
 
-        # 2a: exclusion couplers (no two triplets can share the same doublet)
-        for hit_id, hit in hits.items():
-            for conflicts in [hit.inner_kept, hit.outer_kept]:
-                for (d1, d2) in itertools.combinations(conflicts, 2):
-                    for t1 in d1.inner_kept | d1.outer_kept:
-                        for t2 in d2.inner_kept | d2.outer_kept:
-                            if t1 == t2:
-                                self.logger.warning(f'tplet_1 == tplet_2 == {t1}')
-                                continue
-                            key = (str(t1), str(t2))
-                            if key not in Q and tuple(reversed(key)) not in Q:
-                                Q[key] = self._compute_conflict_strength(t1, t2)
+                # 1: qbits with their weight (doublets with a common weight)
+                for q in triplets:
+                    print(q.phi_slice, q.eta_slice, phi, eta)
+                    if q.eta_slice == eta and q.phi_slice == phi:
+                        q.weight = self._compute_weight(q)
+                        Q[(str(q), str(q))] = q.weight
+                        #qubo_list[eta][phi][(str(q), str(q))] = q.weight
+                    n_vars = len(qubo_list[eta][phi])
 
-        n_excl_couplers = len(Q) - n_vars
-        # 2b: inclusion couplers (consecutive doublets with a good triplet)
-        for q in quadruplets:
-            key = (str(q.t1), str(q.t2))
-            Q[key] = q.strength
+                # 2a: exclusion couplers (no two triplets can share the same doublet)
+                for hit_id, hit in hits.items():
+                    for conflicts in [hit.inner_kept, hit.outer_kept]:
+                        for (d1, d2) in itertools.combinations(conflicts, 2):
+                            for t1 in d1.inner_kept | d1.outer_kept:
+                                for t2 in d2.inner_kept | d2.outer_kept:
+                                    if t1 == t2:
+                                        self.logger.warning(f'tplet_1 == tplet_2 == {t1}')
+                                        continue
+                                    key = (str(t1), str(t2))
+                                    if key not in Q and tuple(reversed(key)) not in Q:
+                                        if t1.eta_slice == eta and t2.phi_slice == phi:
+                                            #qubo_list[eta][phi][key] = self._compute_conflict_strength(t1, t2)
+                                            Q[key] = self._compute_conflict_strength(t1, t2)
 
-        n_incl_couplers = len(Q) - (n_vars + n_excl_couplers)
-        exec_time = time.process_time() - start_time
 
-        self.logger.info(f'Qubo generated in {exec_time:.2f}s. Size: {len(Q)}. Vars: {n_vars}, '
-                         f'excl. couplers: {n_excl_couplers}, incl. couplers: {n_incl_couplers}')
+                n_excl_couplers = len(Q) - n_vars
+                # 2b: inclusion couplers (consecutive doublets with a good triplet)
+                for q in quadruplets:
+                    if q.eta_slice == eta and q.phi_slice == phi:
+                        key = (str(q.t1), str(q.t2))
+                        Q[key] = q.strength
+                        #qubo_list[eta][phi][key] = q.strength
+
+                qubo_list[eta][phi] = Q
+                n_incl_couplers = len(Q) - (n_vars + n_excl_couplers)
+                exec_time = time.process_time() - start_time
+
+
+                self.logger.info(f'Qubo generated in {exec_time:.2f}s. Size: {len(Q)}. Vars: {n_vars}, '
+                                 f'excl. couplers: {n_excl_couplers}, incl. couplers: {n_incl_couplers}')
         if return_stats:
-            return Q, (n_vars, n_incl_couplers, n_excl_couplers)
+            return qubo_list[0][0], (n_vars, n_incl_couplers, n_excl_couplers)
         else:
-            return Q
+            print(qubo_list[0][0])
+            return qubo_list[0][0]
 
-
-
-# Pickup later. Note that working outside the class is a nightmare
-"""def multiprocess_doublets(QallseBase,initial_doublets):
-    from hepqpr.qallse.qallse_base import QallseBase
-    #from QallseBase import initial_doublets
-    #from .qallse_base import initial_doublets
-    doublets = []
-    for (start_id, end_id) in initial_doublets:
-        start, end = QallseBase.hits[start_id], QallseBase.hits[end_id]
-        d = Doublet(start, end)
-        if not QallseBase._is_invalid_doublet(d):
-             start.outer.append(d)
-             end.inner.append(d)
-             doublets.append(d)
-    QallseBase.doublets = doublets"""
