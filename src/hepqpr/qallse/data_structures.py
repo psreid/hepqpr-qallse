@@ -21,10 +21,8 @@ class Volayer:
     #: Define the mapping of `volume_id` and `layer_id` into one number (the index in the list)
     ordering = [(8, 2), (8, 4), (8, 6), (8, 8), (13, 2), (13, 4), (13, 6), (13, 8), (17, 2), (17, 4)]
     
-    #: Define slices in z. Extreme values seem to be |x|=1083.4 but this is based on testing only... therefore using inf for last boundary
-    #eta_slices = [(-float("inf"),-800), (-800,-600), (-600,-400), (-400,-200), (-200,0), (0,200), (200,400), (400,600), (600,800), (800,float("inf"))]
+    #: Define slices in eta and phi
     eta_slices = [(-float("inf"), -3), (-3, -2), (-2, -1), (-1, 1), (1, 2), (2, 3), (3, float("inf"))]
-    #eta_slices = [(-float("inf"), float("inf"))]
     phi_slices = [(0, 0.5), (0.5, 1), (1, 1.5), (1.5, 2)]
 
     @classmethod
