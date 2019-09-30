@@ -291,6 +291,8 @@ class QallseBase(ABC):
                         q.weight = self._compute_weight(q)
                         Q[(str(q), str(q))] = q.weight
                         #qubo_list[eta][phi][(str(q), str(q))] = q.weight
+                    else:
+                        print("triplet failed")
                     n_vars = len(qubo_list[eta][phi])
 
                 # 2a: exclusion couplers (no two triplets can share the same doublet)
@@ -327,6 +329,8 @@ class QallseBase(ABC):
         if return_stats:
             return qubo_list[0][0], (n_vars, n_incl_couplers, n_excl_couplers)
         else:
+            if qubo_list[0][0] == qubo_list[0][1]:
+                print ("it's the same")
             print(qubo_list[0][0])
             return qubo_list[0][0]
 

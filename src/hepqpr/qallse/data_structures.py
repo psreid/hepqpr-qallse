@@ -219,8 +219,8 @@ class Quadruplet(Xplet):
         self.t2: Triplet = t2
 
         #: The slice in which the quadruplet belongs to
-        self.phi_slice = t1.phi_slice
-        self.eta_slice = t1.eta_slice
+        self.phi_slice = t2.phi_slice
+        self.eta_slice = t2.eta_slice
 
         #: Absolute difference between the two triplets' curvatures
         self.delta_curvature = abs(self.t1.curvature - self.t2.curvature)

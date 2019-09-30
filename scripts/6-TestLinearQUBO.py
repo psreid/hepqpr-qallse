@@ -59,9 +59,9 @@ else:
 #%%time
 
 # instantiate qallse
-for x in range (20):
+for x in range (1):
 	model = model_class(dw, **extra_config)
-	lin_bias = model.give_weight(lin_bias=x*0.5)
+
 	# build the qubo
 	model.build_model(doublets=doublets)
 	Q = model.to_qubo()
