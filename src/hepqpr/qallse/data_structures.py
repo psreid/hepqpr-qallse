@@ -43,7 +43,7 @@ class Volayer:
     @classmethod
     def get_phi_slice(cls, xval: float, yval: float) -> int:
         """Get phi-slice index for hit (see :py:attr:`~slices`)."""
-        phi=np.arctan2(yval,xval)/np.pi+1
+        phi = np.arctan2(yval,xval)/np.pi+1
         return cls.phi_slices.index(list(filter(lambda sl: phi>sl[0] and phi<=sl[1], cls.phi_slices))[0])
 
     @classmethod
@@ -235,3 +235,14 @@ class Quadruplet(Xplet):
         """Return the ordered list of doublets composing this triplet."""
         #: Does this need to be reworked with the slicing algorithm?
         return self.t1.doublets() + [self.t2.d2]
+
+
+class QuboSlice(object):
+# TODO Make QUBO slice class
+    def __init__(self, q: {}, eta: int, phi: int):
+
+        self.qubo: {} = q
+        self.eta = eta
+        self.phi = phi
+
+
