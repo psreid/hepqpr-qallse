@@ -12,7 +12,7 @@ from hepqpr.qallse import *
 from hepqpr.qallse.dsmaker import create_dataset
 
 # initialise the plotting module in "notebook" mode
-set_notebook_mode()
+# set_notebook_mode()
 
 # initialise the logging module
 
@@ -60,44 +60,44 @@ else:
 
 # instantiate qallse
 for x in range (1):
-	model = model_class(dw, **extra_config)
+    model = model_class(dw, **extra_config)
 
-	# build the qubo
-	model.build_model(doublets=doublets)
-	Q = model.to_qubo()
+    # build the qubo
+    model.build_model(doublets=doublets)
+    Q = model.to_qubo()
+    
+    #%%time
+    # execute the qubo TODO find QUBO start
+    response = model.sample_qubo(Q=Q)
 
-	#%%time
-	# execute the qubo TODO find QUBO start
-	response = model.sample_qubo(Q=Q)
 
 
+    # get all output doublets
+    all_doublets = model.process_sample(response.samples()[0])
+    # recreate tracks and resolve remaining conflicts
+    final_tracks, final_doublets = TrackRecreaterD().process_results(all_doublets)
 
-	# get all output doublets
-	all_doublets = model.process_sample(response.samples()[0])
-	# recreate tracks and resolve remaining conflicts
-	final_tracks, final_doublets = TrackRecreaterD().process_results(all_doublets)
+    # stats about the qbsolv run
+    en0 = dw.compute_energy(Q)
+    en = response.record.energy[0]
 
-	# stats about the qbsolv run
-	en0 = dw.compute_energy(Q)
-	en = response.record.energy[0]
+    print(f'SAMPLE -- energy: {en:.4f}, ideal: {en0:.4f} (diff: {en-en0:.6f})')
+    occs = response.record.num_occurrences
+    print(f'          best sample occurrence: {occs[0]}/{occs.sum()}')
 
-	print(f'SAMPLE -- energy: {en:.4f}, ideal: {en0:.4f} (diff: {en-en0:.6f})')
-	occs = response.record.num_occurrences
-	print(f'          best sample occurrence: {occs[0]}/{occs.sum()}')
+    # scores
+    p, r, missings = dw.compute_score(final_doublets)
+    print(f'SCORE  -- precision (%): {p * 100}, recall (%): {r * 100}, missing: {len(missings)}')
+    trackml_score = dw.compute_trackml_score(final_tracks)
+    print(f'          tracks found: {len(final_tracks)}, trackml score (%): {trackml_score * 100}')
+    ## omit plotted results
+    ## en0, en , precision, recall, missing, tracksfound, trackscore%
+    reel, fake, miss = dw.get_score_numbers(final_doublets)
+    print(f' #Fakes: {fake}, Reals {reel}, Missing {miss}' )
 
-	# scores
-	p, r, missings = dw.compute_score(final_doublets)
-	print(f'SCORE  -- precision (%): {p * 100}, recall (%): {r * 100}, missing: {len(missings)}')
-	trackml_score = dw.compute_trackml_score(final_tracks)
-	print(f'          tracks found: {len(final_tracks)}, trackml score (%): {trackml_score * 100}')
-	## omit plotted results
-	## en0, en , precision, recall, missing, tracksfound, trackscore%
-	reel, fake, miss = dw.get_score_numbers(final_doublets)
-	print(f' #Fakes: {fake}, Reals {reel}, Missing {miss}' )
-
-	qann= open("LinearBIAStest2.txt","a+")
-	print(f' #Fakes: {fake}, Reals {reel}, Missing {miss}' )
-	qann.write(f' #Fakes: {fake}, Reals {reel}, Missing {miss},SAMPLE -- energy: {en:.4f}, ideal: {en0:.4f} (diff: {en-en0:.6f})\n')
-	'''qann.write("%d , %d " % (dw.compute_energy(Q),response.record.energy[0] ))
-	qann.write(f'{p * 100}, {r * 100}, {len(missings)}, ')
-	qann.write(f'{len(final_tracks)}, {trackml_score * 100}, \n')'''
+    qann= open("LinearBIAStest2.txt","a+")
+    print(f' #Fakes: {fake}, Reals {reel}, Missing {miss}' )
+    qann.write(f' #Fakes: {fake}, Reals {reel}, Missing {miss},SAMPLE -- energy: {en:.4f}, ideal: {en0:.4f} (diff: {en-en0:.6f})\n')
+    '''qann.write("%d , %d " % (dw.compute_energy(Q),response.record.energy[0] ))
+    qann.write(f'{p * 100}, {r * 100}, {len(missings)}, ')
+    qann.write(f'{len(final_tracks)}, {trackml_score * 100}, \n')'''
