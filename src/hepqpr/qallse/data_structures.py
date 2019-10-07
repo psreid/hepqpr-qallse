@@ -34,8 +34,8 @@ class Volayer:
     def get_eta_slice(cls, zval: float,  xval: float, yval: float) -> int:
 
         # eta = -ln tan(r/z  * 0.5)
-        print(xval, yval, zval)
-        print((-1)*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/zval * 0.5))))
+        #print(xval, yval, zval)
+        #print((-1)*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/zval * 0.5))))
         eta = (-1)*(zval/np.abs(zval))*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/(zval) * 0.5)))
         """Get eta-slice index for hit (see :py:attr:`~slices`)."""
         return cls.eta_slices.index(list(filter(lambda sl: eta>sl[0] and eta<=sl[1], cls.eta_slices))[0])
@@ -236,13 +236,44 @@ class Quadruplet(Xplet):
         #: Does this need to be reworked with the slicing algorithm?
         return self.t1.doublets() + [self.t2.d2]
 
-
 class QuboSlice(object):
 # TODO Make QUBO slice class
     def __init__(self, q: {}, eta: int, phi: int):
-
-        self.qubo: {} = q
+        self.qubo = q
         self.eta = eta
         self.phi = phi
+    
+    def __str__(self):
+        return 'eta: {0}, phi: {1}\nQubo: {2}'.format(self.eta,self.phi,self.qubo)
+
+#container carrying all qubo slices
+class SliceContainer(object):
+    def __init__(self):
+        self.quboList=[]
+    
+    def __str__(self):
+        return 'Container with {0} slices'.format(len(self.quboList))
+    
+    def addQubo(self, q: QuboSlice):
+        self.quboList.append(q)
+    
+    def getFirstNonEmptyQubo(self):
+        for qslice in self.quboList:
+            if len(qslice.qubo)>0: 
+                print("Return qubo with length {0} and eta: {1}, phi: {2}".format(len(qslice.qubo),qslice.eta,qslice.phi))
+                return qslice
+        print("All quboSlices empty!")
+        
+    
+    def getQubo(self, eta: int, phi: int):
+        foundQubo=None
+        for qubo in self.quboList:
+            if qubo.eta==eta and qubo.phi==phi:
+                if not foundQubo: foundQubo=qubo
+                else: raise Exception("ERROR: Found two qubos with same slice coords.")
+        if bool(foundQubo):
+            print("WARNING: Returning EMPTY qubo, code might crash!")
+        return foundQubo
+
 
 

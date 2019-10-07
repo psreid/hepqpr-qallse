@@ -274,31 +274,26 @@ class QallseBase(ABC):
         :param return_stats: if set, also return the number of variables and couplers.
         :return: either the QUBO, or a tuple (QUBO, (n_vars, n_incl_couplers, n_excl_couplers))
         """
+        
         #FIXME investigate TQUBO object
-        Q = [[{} for i in range(len(Volayer.phi_slices))] for j in range(len(Volayer.eta_slices))]
-        #qubo_list = [[{} for i in range(len(Volayer.phi_slices))] for j in range(len(Volayer.eta_slices))]
-        quboslice = [[QuboSlice for i in range(len(Volayer.phi_slices))] for j in range(len(Volayer.eta_slices))]
+        #Q = [[{} for i in range(len(Volayer.phi_slices))] for j in range(len(Volayer.eta_slices))]
+        
+        #container class for slices
+        sliceContainer = SliceContainer()
 
         hits, doublets, triplets = self.qubo_hits, self.qubo_doublets, self.qubo_triplets
 
         quadruplets = self.quadruplets
         start_time = time.process_time()
-        print(len(Volayer.eta_slices), len(Volayer.phi_slices))
+        
         for eta in range(len(Volayer.eta_slices)):
             for phi in range(len(Volayer.phi_slices)):
                 Q = {}
                 # 1: qbits with their weight (doublets with a common weight)
                 for q in triplets:
-                    print(q.phi_slice, q.eta_slice, phi, eta)
                     if q.eta_slice == eta and q.phi_slice == phi:
                         q.weight = self._compute_weight(q)
-                        #Q[(str(q), str(q))] = q.weight
                         Q[(str(q), str(q))] = q.weight
-                        #quboslice[eta][phi] = QuboSlice(Q[(str(q), str(q))], eta, phi)
-
-                        #qubo_list[eta][phi][(str(q), str(q))] = q.weight
-                    else:
-                        print("triplet failed")
                     n_vars = len(Q)
 
                 # 2a: exclusion couplers (no two triplets can share the same doublet)
@@ -313,10 +308,7 @@ class QallseBase(ABC):
                                     key = (str(t1), str(t2))
                                     if key not in Q and tuple(reversed(key)) not in Q:
                                         if t1.eta_slice == eta and t2.phi_slice == phi:
-                                            #qubo_list[eta][phi][key] = self._compute_conflict_strength(t1, t2)
                                             Q[key] = self._compute_conflict_strength(t1, t2)
-
-
 
                 n_excl_couplers = len(Q) - n_vars
                 # 2b: inclusion couplers (consecutive doublets with a good triplet)
@@ -324,20 +316,25 @@ class QallseBase(ABC):
                     if q.eta_slice == eta and q.phi_slice == phi:
                         key = (str(q.t1), str(q.t2))
                         Q[key] = q.strength
-                        #qubo_list[eta][phi][key] = q.strength
 
-                #qubo_list[eta][phi] = Q[eta][phi]
-                quboslice[eta][phi] = QuboSlice(Q, eta, phi)
+                qSlice = QuboSlice(Q, eta, phi)
+                sliceContainer.addQubo(q=qSlice)
+                
                 n_incl_couplers = len(Q) - (n_vars + n_excl_couplers)
                 exec_time = time.process_time() - start_time
-
-                #FIXME Segfault
-                Q.clear()
-
-
+                
+                #DO NOT DO THIS, WILL REMOVE VALUES FOR ALL REFERENCES!
+                #Q.clear()
 
                 self.logger.info(f'Qubo generated in {exec_time:.2f}s. Size: {len(Q)}. Vars: {n_vars}, '
                                  f'excl. couplers: {n_excl_couplers}, incl. couplers: {n_incl_couplers}')
+        print(sliceContainer)
+        print(sliceContainer.getQubo(0,0))
+        print(sliceContainer.getFirstNonEmptyQubo())
+        #TODO REMOVE THIS when understood
+        import sys
+        sys.exit()
+        #TODO UPDATE THIS with above features
         if return_stats:
             return quboslice[0][0], (n_vars, n_incl_couplers, n_excl_couplers)
         else:
