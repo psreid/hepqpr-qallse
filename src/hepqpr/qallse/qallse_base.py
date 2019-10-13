@@ -165,13 +165,9 @@ class QallseBase(ABC):
             if bool(qubo.qubo):
                 try:
                     with capture_stdout(logfile):
-                        print("im in sample qubo", qubo.qubo)
-                        #response = (QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params)\
-                        #, qubo.eta , qubo.phi)
                         response = Response(QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params), qubo.eta, qubo.phi)
                 except: # fails if called from ipython notebook...
                     response = QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params)
-                    print("im in a notebook sample" , qubo.qubo)
             exec_time = time.process_time() - start_time
             if bool(qubo.qubo):
                 self.logger.info(f'QUBO of size {len(qubo.qubo)} sampled in {exec_time:.2f}s (seed {seed}).')
