@@ -22,7 +22,8 @@ class Volayer:
     ordering = [(8, 2), (8, 4), (8, 6), (8, 8), (13, 2), (13, 4), (13, 6), (13, 8), (17, 2), (17, 4)]
     
     #: Define slices in eta and phi
-    eta_slices = [(-float("inf"), -3), (-3, -2), (-2, -1), (-1, 1), (1, 2), (2, 3), (3, float("inf"))]
+    #eta_slices = [(-float("inf"), -3), (-3, -2), (-2, -1), (-1, 0), (0, 1), (1, 2), (2, 3), (3, float("inf"))]
+    eta_slices = [(-float("inf"), float("inf"))]
     phi_slices = [(0, 0.5), (0.5, 1), (1, 1.5), (1.5, 2)]
 
     @classmethod
@@ -246,10 +247,11 @@ class QuboSlice(object):
     def __str__(self):
         return 'eta: {0}, phi: {1}\nQubo: {2}'.format(self.eta,self.phi,self.qubo)
 
-#container carrying all qubo slices
+
+#: Container carrying all qubo slices
 class SliceContainer(object):
     def __init__(self):
-        self.quboList=[]
+        self.quboList = []
     
     def __str__(self):
         return 'Container with {0} slices'.format(len(self.quboList))
@@ -260,20 +262,50 @@ class SliceContainer(object):
     def getFirstNonEmptyQubo(self):
         for qslice in self.quboList:
             if len(qslice.qubo)>0: 
-                print("Return qubo with length {0} and eta: {1}, phi: {2}".format(len(qslice.qubo),qslice.eta,qslice.phi))
+                print("Return qubo with length {0} and eta: {1}, phi: {2}".format(len(qslice.qubo), qslice.eta, qslice.phi))
                 return qslice
         print("All quboSlices empty!")
-        
-    
+
     def getQubo(self, eta: int, phi: int):
-        foundQubo=None
-        for qubo in self.quboList:
-            if qubo.eta==eta and qubo.phi==phi:
-                if not foundQubo: foundQubo=qubo
+        foundQubo = None
+        for qslice in self.quboList:
+            if qslice.eta == eta and qslice.phi == phi:
+                if not foundQubo: foundQubo = qslice.qubo
                 else: raise Exception("ERROR: Found two qubos with same slice coords.")
         if bool(foundQubo):
             print("WARNING: Returning EMPTY qubo, code might crash!")
         return foundQubo
+
+class Response(object):
+    #: Similarly this class is used to manage the qubo response with respect to its slicing
+    def __init__(self, r: TDimodSample, eta: int, phi: int):
+        self.response = r
+        self.eta = eta
+        self.phi = phi
+
+class ResponseContainer(object):
+    def __init__(self):
+        self.responseList = []
+
+    def addResponse(self, r: Response):
+        self.responseList.append(r)
+
+    def getResponse(self, eta: int, phi: int):
+        foundResponse = None
+        for rslice in self.responseList:
+            if rslice.eta == eta and rslice.phi == phi:
+                if not foundResponse: foundResponse = rslice.response
+                else: raise Exception("ERROR: Found two responses with same slice coords.")
+        if bool(foundResponse):
+            print("WARNING: Returning EMPTY qubo response, code might crash!")
+        return foundResponse
+
+    def getFirstNonEmptyResponse(self):
+        for rslice in self.responseList:
+            if len(rslice.qubo)>0:
+                print("Return response with length {0} and eta: {1}, phi: {2}".format(len(rslice.qubo), rslice.eta, rslice.phi))
+                return rslice
+        print("All Responses are empty!")
 
 
 
