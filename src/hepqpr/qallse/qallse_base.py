@@ -139,6 +139,47 @@ class QallseBase(ABC):
 
         return (response, exec_time) if return_time else response
 
+    def sample_qubo_slices(self, Q: TQubo = None, return_time=False, logfile: str = None, seed: int=None, **qbsolv_params)\
+    -> ResponseContainer:
+            #-> Union[object, Tuple[object, float]]:
+        """
+        Submit a QUBO to (see `qbsolv <https://github.com/dwavesystems/qbsolv>`_).
+
+        :param Q: the QUBO's in the from of a QuboSlice container. If not defined, :py:meth:~`to_qubo` will be called.
+        :param return_time: if set, also return the execution time (in seconds)
+        :param qbsolv_params: parameters to pass to qbsolv's `sample_qubo` method
+        :param logfile: path to a file. if set, all qbsolv output will be redirected to this file
+        :param seed: the random seed for qbsolv. **MUST** be a 32-bits integer with entropy !
+        :return: a dimod response or a tuple (dimod response, exec_time)
+         (see `dimod.Response <https://docs.ocean.dwavesys.com/projects/dimod/en/latest/reference/response.html>`_)
+        """
+        if Q is None: Q = self.to_qubo()
+        if seed is None:
+            import random
+            seed = random.randint(0, 1<<31)
+        # Instantiate a container to hold all qubo responses
+        responsecontainer = ResponseContainer()
+        # run qbsolv
+        start_time = time.process_time()
+        for qubo in Q.quboList:
+            if bool(qubo.qubo):
+                try:
+                    with capture_stdout(logfile):
+                        print("im in sample qubo", qubo.qubo)
+                        #response = (QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params)\
+                        #, qubo.eta , qubo.phi)
+                        response = Response(QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params), qubo.eta, qubo.phi)
+                except: # fails if called from ipython notebook...
+                    response = QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params)
+                    print("im in a notebook sample" , qubo.qubo)
+            exec_time = time.process_time() - start_time
+            if bool(qubo.qubo):
+                self.logger.info(f'QUBO of size {len(qubo.qubo)} sampled in {exec_time:.2f}s (seed {seed}).')
+            responseSlice = Response(response, qubo.eta, qubo.phi)
+            responsecontainer.addResponse(r=responseSlice)
+
+        return (responsecontainer, exec_time) if return_time else responsecontainer
+
     @classmethod
     def process_sample(self, sample: TDimodSample) -> List[TXplet]:
         """
@@ -150,6 +191,28 @@ class QallseBase(ABC):
         """
         final_triplets = [Triplet.name_to_hit_ids(k) for k, v in sample.items() if v == 1]
         final_doublets = tracks_to_xplets(final_triplets)
+        return np.unique(final_doublets, axis=0).tolist()
+
+    @classmethod
+    def process_sample_slices(self, sample: ResponseContainer) -> List[TXplet]:
+    # def process_sample(self, sample: TDimodSample) -> List[TXplet]:
+        """
+        Convert a sliced QUBO solution into a set of doublets.
+        The sample needs to behave like a dictionary, but can also be an instance of dimod.SampleView.
+
+        :param sample: the QUBO response to process
+        :return: the list of final doublets
+
+        ### Fixme Start here to finish resposnse slicing algorithm
+        """
+        print(sample.responseList[0])
+        print(sample.responseList[0].response)
+        print(sample.responseList[0].eta)
+        for rslice in sample.responseList:
+            print(rslice.phi, rslice.eta, rslice.response)
+            print(sample.getResponse(rslice.eta, rslice.phi))
+            final_triplets = [Triplet.name_to_hit_ids(k) for k, v in sample.responseList[0].response.items() if v == 1]
+            final_doublets = tracks_to_xplets(final_triplets)
         return np.unique(final_doublets, axis=0).tolist()
 
     @classmethod
@@ -268,7 +331,8 @@ class QallseBase(ABC):
         pass
 
     # ---------------------------------------------
-    def to_qubo(self, return_stats=False) -> Union[TQubo, Tuple[TQubo, Tuple[int, int, int]]]:
+    def to_qubo(self, return_stats=False) -> SliceContainer:
+        #Union[TQubo, Tuple[TQubo, Tuple[int, int, int]]]:
         """
         Generate the QUBO. Attention: ensure that :py:meth:~`build_model` has been called previously.
         :param return_stats: if set, also return the number of variables and couplers.
@@ -323,22 +387,21 @@ class QallseBase(ABC):
                 n_incl_couplers = len(Q) - (n_vars + n_excl_couplers)
                 exec_time = time.process_time() - start_time
                 
-                #DO NOT DO THIS, WILL REMOVE VALUES FOR ALL REFERENCES!
+                #DO NOT DO THIS, WILL REMOVE VALUES FOR ALL REFERENCES! thanks
                 #Q.clear()
 
                 self.logger.info(f'Qubo generated in {exec_time:.2f}s. Size: {len(Q)}. Vars: {n_vars}, '
                                  f'excl. couplers: {n_excl_couplers}, incl. couplers: {n_incl_couplers}')
         print(sliceContainer)
-        print(sliceContainer.getQubo(0,0))
+        print("hi",  sliceContainer.getQubo(3, 3))
         print(sliceContainer.getFirstNonEmptyQubo())
+
         #TODO REMOVE THIS when understood
-        import sys
-        sys.exit()
+        #import sys
+        #sys.exit()
         #TODO UPDATE THIS with above features
         if return_stats:
-            return quboslice[0][0], (n_vars, n_incl_couplers, n_excl_couplers)
+            return sliceContainer, (n_vars, n_incl_couplers, n_excl_couplers)
         else:
-            if quboslice[0][0] == quboslice[0][0]:
-                print("it's the same")
-            return quboslice[0][0].qubo
+            return sliceContainer
 
