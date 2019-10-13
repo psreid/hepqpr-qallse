@@ -64,26 +64,28 @@ for x in range (1):
 
     # build the qubo
     model.build_model(doublets=doublets)
-    Q = model.to_qubo()
+    qslice = model.to_qubo()
+
     
     #%%time
     # execute the qubo TODO find QUBO start
-    response = model.sample_qubo(Q=Q)
+    response = model.sample_qubo_slices(Q=qslice)
 
 
 
     # get all output doublets
-    all_doublets = model.process_sample(response.samples()[0])
+    all_doublets = model.process_sample_slices(response)
     # recreate tracks and resolve remaining conflicts
     final_tracks, final_doublets = TrackRecreaterD().process_results(all_doublets)
 
     # stats about the qbsolv run
-    en0 = dw.compute_energy(Q)
-    en = response.record.energy[0]
+    # FIXME
+    #en0 = dw.compute_energy(qslice)
+    #en = response.record.energy[0]
 
-    print(f'SAMPLE -- energy: {en:.4f}, ideal: {en0:.4f} (diff: {en-en0:.6f})')
-    occs = response.record.num_occurrences
-    print(f'          best sample occurrence: {occs[0]}/{occs.sum()}')
+   # print(f'SAMPLE -- energy: {en:.4f}, ideal: {en0:.4f} (diff: {en-en0:.6f})')
+   # occs = response.record.num_occurrences
+   # print(f'          best sample occurrence: {occs[0]}/{occs.sum()}')
 
     # scores
     p, r, missings = dw.compute_score(final_doublets)
@@ -97,7 +99,7 @@ for x in range (1):
 
     qann= open("LinearBIAStest2.txt","a+")
     print(f' #Fakes: {fake}, Reals {reel}, Missing {miss}' )
-    qann.write(f' #Fakes: {fake}, Reals {reel}, Missing {miss},SAMPLE -- energy: {en:.4f}, ideal: {en0:.4f} (diff: {en-en0:.6f})\n')
+    #qann.write(f' #Fakes: {fake}, Reals {reel}, Missing {miss},SAMPLE -- energy: {en:.4f}, ideal: {en0:.4f} (diff: {en-en0:.6f})\n')
     '''qann.write("%d , %d " % (dw.compute_energy(Q),response.record.energy[0] ))
     qann.write(f'{p * 100}, {r * 100}, {len(missings)}, ')
     qann.write(f'{len(final_tracks)}, {trackml_score * 100}, \n')'''
