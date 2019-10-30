@@ -107,7 +107,7 @@ class QallseBase(ABC):
             f'quadruplets: {len(self.quadruplets)}')
 
         return self
-    def sample_qubo(self, Q: TQubo = None, return_time=False, logfile: str = None, seed: int=None, **qbsolv_params) -> Union[
+    def sample_qubo(self, Q: TQubo = None, return_time=False, logfile: str = None, seed: int=None, sampler=None , **qbsolv_params) -> Union[
         object, Tuple[object, float]]:
         """
         Submit a QUBO to (see `qbsolv <https://github.com/dwavesystems/qbsolv>`_).
@@ -130,8 +130,11 @@ class QallseBase(ABC):
         try:
             with capture_stdout(logfile):
                 response = QBSolv().sample_qubo(Q, seed=seed, **qbsolv_params)
+                #response = sampler.sample_qubo(Q, seed=seed, **qbsolv_params)
+
         except: # fails if called from ipython notebook...
-            response = QBSolv().sample_qubo(Q, seed=seed, **qbsolv_params)
+            #response = QBSolv().sample_qubo(Q, seed=seed, **qbsolv_params)
+            response = sampler.sample_qubo(Q, seed=seed, **qbsolv_params)
 
         exec_time = time.process_time() - start_time
 
@@ -314,20 +317,3 @@ class QallseBase(ABC):
             return Q, (n_vars, n_incl_couplers, n_excl_couplers)
         else:
             return Q
-
-
-
-# Pickup later. Note that working outside the class is a nightmare
-"""def multiprocess_doublets(QallseBase,initial_doublets):
-    from hepqpr.qallse.qallse_base import QallseBase
-    #from QallseBase import initial_doublets
-    #from .qallse_base import initial_doublets
-    doublets = []
-    for (start_id, end_id) in initial_doublets:
-        start, end = QallseBase.hits[start_id], QallseBase.hits[end_id]
-        d = Doublet(start, end)
-        if not QallseBase._is_invalid_doublet(d):
-             start.outer.append(d)
-             end.inner.append(d)
-             doublets.append(d)
-    QallseBase.doublets = doublets"""

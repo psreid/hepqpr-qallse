@@ -7,9 +7,19 @@ import pandas as pd
 import numpy as np
 import tempfile
 import logging
+# :FIXME experimental
+import neal
+import dimod
+import dwave_networkx as dnx
+from tabu import TabuSampler
+import networkx as nx
+import dwave.embedding
+from dwave.system import DWaveSampler, EmbeddingComposite
+from hepqpr.qallse.cli.func import *
 from hepqpr.qallse.plotting import *
 from hepqpr.qallse import *
 from hepqpr.qallse.dsmaker import create_dataset
+
 
 # initialise the plotting module in "notebook" mode
 set_notebook_mode()
@@ -24,7 +34,7 @@ logging.getLogger('hepqpr').setLevel(logging.DEBUG)
 # == DATASET CONFIG
 
 dsmaker_config = dict(
-    density=0.02, # 1%
+    density=0.01, # 1%
 )
 
 # == INPUT CONFIG
@@ -35,13 +45,19 @@ add_missing = True
 # == RUN CONFIG
 
 model_class = Qallse # model class to use
-extra_config = dict() # configuration arguments overriding the defaults
+extra_config = dict() #configuration arguments overriding the defaults
 
+#: FIXME experimental pegasus setup
+P6 = dnx.pegasus_graph(6, nice_coordinates=True)
+classical_sampler = neal.SimulatedAnnealingSampler()
+tabu_sampler = TabuSampler()
+sampler = QBsolv.StructureComposite(classical_sampler, P6.nodes, P6.edges)
+#sampler = dimod.StructureComposite(tabu_sampler, P6.nodes, P6.edges)
 
 
 tempdir = tempfile.TemporaryDirectory()
 print(f'using {tempdir.name}')
-metas, path = create_dataset(output_path=tempdir.name, gen_doublets=True, **dsmaker_config)
+metas, path = create_dataset(output_path=tempdir.name, random_seed=0, gen_doublets=True, **dsmaker_config)
 #path =  '/tmp/hpt-collapse/ds10/event000001000'
 
 with open(path + '-meta.json') as f:
@@ -59,16 +75,16 @@ else:
 #%%time
 
 # instantiate qallse
-for x in range (20):
+for x in range (1):
 	model = model_class(dw, **extra_config)
-	lin_bias = model.give_weight(lin_bias=x*0.5)
+	#lin_bias = model.give_weight(lin_bias=x*0.5)
 	# build the qubo
 	model.build_model(doublets=doublets)
 	Q = model.to_qubo()
 
 	#%%time
 	# execute the qubo TODO find QUBO start
-	response = model.sample_qubo(Q=Q)
+	response = model.sample_qubo(Q=Q, seed=1, sampler=sampler)
 
 
 
