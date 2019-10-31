@@ -130,7 +130,7 @@ class QallseBase(ABC):
         try:
             with capture_stdout(logfile):
                 response = QBSolv().sample_qubo(Q, seed=seed, **qbsolv_params)
-                #response = sampler.sample_qubo(Q, seed=seed, **qbsolv_params)
+                response = sampler.sample_qubo(Q, seed=seed, **sample_kwargs)
 
         except: # fails if called from ipython notebook...
             #response = QBSolv().sample_qubo(Q, seed=seed, **qbsolv_params)

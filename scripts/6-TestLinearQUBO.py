@@ -19,6 +19,7 @@ from hepqpr.qallse.cli.func import *
 from hepqpr.qallse.plotting import *
 from hepqpr.qallse import *
 from hepqpr.qallse.dsmaker import create_dataset
+from dwave_qbsolv import QBSolv
 
 
 # initialise the plotting module in "notebook" mode
@@ -48,11 +49,11 @@ model_class = Qallse # model class to use
 extra_config = dict() #configuration arguments overriding the defaults
 
 #: FIXME experimental pegasus setup
-P6 = dnx.pegasus_graph(6, nice_coordinates=True)
+P6 = dnx.pegasus_graph(-100, nice_coordinates=True)
 classical_sampler = neal.SimulatedAnnealingSampler()
 tabu_sampler = TabuSampler()
-sampler = QBsolv.StructureComposite(classical_sampler, P6.nodes, P6.edges)
-#sampler = dimod.StructureComposite(tabu_sampler, P6.nodes, P6.edges)
+#sampler = dimod.StructureComposite(classical_sampler, P6.nodes, P6.edges)
+sampler = dimod.StructureComposite(tabu_sampler, P6.nodes, P6.edges)
 
 
 tempdir = tempfile.TemporaryDirectory()
@@ -84,8 +85,8 @@ for x in range (1):
 
 	#%%time
 	# execute the qubo TODO find QUBO start
-	response = model.sample_qubo(Q=Q, seed=1, sampler=sampler)
-
+	#response = model.sample_qubo(Q=Q, seed=1, sampler=sampler)
+	response = sampler.sample_qubo(Q=Q, seed=1)
 
 
 	# get all output doublets
