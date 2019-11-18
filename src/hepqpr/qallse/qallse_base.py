@@ -165,14 +165,17 @@ class QallseBase(ABC):
             if bool(qubo.qubo):
                 try:
                     with capture_stdout(logfile):
-                        response = Response(QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params), qubo.eta, qubo.phi)
+
+                        response = QBSolv().sample_qubo(qubo.getQubo(qubo.eta, qubo.phi), seed=seed, **qbsolv_params)
                 except: # fails if called from ipython notebook...
+                    print(qubo.eta, ' ', qubo.phi)
                     response = QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params)
             exec_time = time.process_time() - start_time
             if bool(qubo.qubo):
                 self.logger.info(f'QUBO of size {len(qubo.qubo)} sampled in {exec_time:.2f}s (seed {seed}).')
-            responseSlice = Response(response, qubo.eta, qubo.phi)
-            responsecontainer.addResponse(r=responseSlice)
+                responseSlice = ResponseSlice(r=response, eta=qubo.eta, phi=qubo.phi)
+                print("type: ", str(type(responseSlice.respond)))
+                responsecontainer.addResponse(r=responseSlice)
 
         return (responsecontainer, exec_time) if return_time else responsecontainer
 
@@ -185,12 +188,13 @@ class QallseBase(ABC):
         :param sample: the QUBO response to process
         :return: the list of final doublets
         """
+        print('yoyo', sample)
         final_triplets = [Triplet.name_to_hit_ids(k) for k, v in sample.items() if v == 1]
         final_doublets = tracks_to_xplets(final_triplets)
         return np.unique(final_doublets, axis=0).tolist()
 
     @classmethod
-    def process_sample_slices(self, sample: ResponseContainer) -> List[TXplet]:
+    def process_sample_slices(self, sample: TDimodSample) -> List[TXplet]:
     # def process_sample(self, sample: TDimodSample) -> List[TXplet]:
         """
         Convert a sliced QUBO solution into a set of doublets.
@@ -199,15 +203,15 @@ class QallseBase(ABC):
         :param sample: the QUBO response to process
         :return: the list of final doublets
 
-        ### Fixme Start here to finish resposnse slicing algorithm
+        ### Fixme Start here to finish response slicing algorithm
+        ### Get Error     final_triplets = [Triplet.name_to_hit_ids(k) for k, v in dummy.items() if v == 1]
+        ### AttributeError: 'Response' object has no attribute 'items'
         """
-        print(sample.responseList[0])
-        print(sample.responseList[0].response)
-        print(sample.responseList[0].eta)
-        for rslice in sample.responseList:
-            print(rslice.phi, rslice.eta, rslice.response)
-            print(sample.getResponse(rslice.eta, rslice.phi))
-            final_triplets = [Triplet.name_to_hit_ids(k) for k, v in sample.responseList[0].response.items() if v == 1]
+        for respond in sample.responseList:
+            dummy = respond.respond
+            print("type: ", str(type(dummy)))
+            print(sample.getResponse(respond.eta, respond.phi))
+            final_triplets = [Triplet.name_to_hit_ids(k) for k, v in dummy.items() if v == 1]
             final_doublets = tracks_to_xplets(final_triplets)
         return np.unique(final_doublets, axis=0).tolist()
 
@@ -388,8 +392,6 @@ class QallseBase(ABC):
 
                 self.logger.info(f'Qubo generated in {exec_time:.2f}s. Size: {len(Q)}. Vars: {n_vars}, '
                                  f'excl. couplers: {n_excl_couplers}, incl. couplers: {n_incl_couplers}')
-        print(sliceContainer)
-        print("hi",  sliceContainer.getQubo(3, 3))
         print(sliceContainer.getFirstNonEmptyQubo())
 
         #TODO REMOVE THIS when understood

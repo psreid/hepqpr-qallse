@@ -10,7 +10,7 @@ import numpy as np
 
 from .type_alias import *
 from .utils import curvature, angle_diff
-
+from dimod import *
 
 class Volayer:
     """
@@ -276,25 +276,36 @@ class SliceContainer(object):
             print("WARNING: Returning EMPTY qubo, code might crash!")
         return foundQubo
 
-class Response(object):
-    #: Similarly this class is used to manage the qubo response with respect to its slicing
-    def __init__(self, r: TDimodSample, eta: int, phi: int):
-        self.response = r
-        self.eta = eta
-        self.phi = phi
+
+class ResponseSlice(object):
+
+    def __init__(self, r: {}, eta: int, phi: int):
+
+
+            self.respond = r
+            self.eta = eta
+            self.phi = phi
+
+    '''def __init__(self, r: Dict[Tuple, int], eta: int, phi: int):
+        super(ResponseSlice, self).__init__(r: Dict[Tuple, int], eta: int, phi: int)
+
+            self.respond = r
+            self.eta = eta
+            self.phi = phi
+'''
 
 class ResponseContainer(object):
     def __init__(self):
         self.responseList = []
 
-    def addResponse(self, r: Response):
+    def addResponse(self, r: ResponseSlice):
         self.responseList.append(r)
 
     def getResponse(self, eta: int, phi: int):
         foundResponse = None
         for rslice in self.responseList:
             if rslice.eta == eta and rslice.phi == phi:
-                if not foundResponse: foundResponse = rslice.response
+                if not foundResponse: foundResponse = rslice.respond
                 else: raise Exception("ERROR: Found two responses with same slice coords.")
         if bool(foundResponse):
             print("WARNING: Returning EMPTY qubo response, code might crash!")
@@ -302,8 +313,8 @@ class ResponseContainer(object):
 
     def getFirstNonEmptyResponse(self):
         for rslice in self.responseList:
-            if len(rslice.qubo)>0:
-                print("Return response with length {0} and eta: {1}, phi: {2}".format(len(rslice.qubo), rslice.eta, rslice.phi))
+            if len(rslice.respond)>0:
+                #print("Return response with length {0} and eta: {1}, phi: {2}".format(len(rslice.qubo), rslice.eta, rslice.phi))
                 return rslice
         print("All Responses are empty!")
 
