@@ -10,6 +10,9 @@ import logging
 from hepqpr.qallse.plotting import *
 from hepqpr.qallse import *
 from hepqpr.qallse.dsmaker import create_dataset
+from typing import Tuple, List, Dict
+from enum import IntEnum
+
 
 # initialise the plotting module in "notebook" mode
 # set_notebook_mode()
@@ -70,13 +73,15 @@ for x in range (1):
     #%%time
     # execute the qubo TODO find QUBO start
     response = model.sample_qubo_slices(Q=qslice)
-
+    #response = model.sample_qubo(Q=qslice.getQubo(0,0))
 
 
     # get all output doublets
-    all_doublets = model.process_sample_slices(response)
+    all_doublets = model.process_sample_slices(sample=response)
     # recreate tracks and resolve remaining conflicts
     final_tracks, final_doublets = TrackRecreaterD().process_results(all_doublets)
+
+    print("made it this far!")
 
     # stats about the qbsolv run
     # FIXME
