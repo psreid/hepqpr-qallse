@@ -165,7 +165,6 @@ class QallseBase(ABC):
             if bool(qubo.qubo):
                 try:
                     with capture_stdout(logfile):
-
                         response = QBSolv().sample_qubo(qubo.getQubo(qubo.eta, qubo.phi), seed=seed, **qbsolv_params)
                 except: # fails if called from ipython notebook...
                     print(qubo.eta, ' ', qubo.phi)
@@ -174,7 +173,6 @@ class QallseBase(ABC):
             if bool(qubo.qubo):
                 self.logger.info(f'QUBO of size {len(qubo.qubo)} sampled in {exec_time:.2f}s (seed {seed}).')
                 responseSlice = ResponseSlice(r=response, eta=qubo.eta, phi=qubo.phi)
-                print("type: ", str(type(responseSlice.respond)))
                 responsecontainer.addResponse(r=responseSlice)
 
         return (responsecontainer, exec_time) if return_time else responsecontainer
@@ -194,7 +192,8 @@ class QallseBase(ABC):
         return np.unique(final_doublets, axis=0).tolist()
 
     @classmethod
-    def process_sample_slices(self, sample: TDimodSample) -> List[TXplet]:
+    #def process_sample_slices(self, sample: TDimodSample) -> List[TXplet]:
+    def process_sample_slices(self, responseContainer=None) -> List[TXplet]:
     # def process_sample(self, sample: TDimodSample) -> List[TXplet]:
         """
         Convert a sliced QUBO solution into a set of doublets.
@@ -207,10 +206,11 @@ class QallseBase(ABC):
         ### Get Error     final_triplets = [Triplet.name_to_hit_ids(k) for k, v in dummy.items() if v == 1]
         ### AttributeError: 'Response' object has no attribute 'items'
         """
-        for respond in sample.responseList:
-            dummy = respond.respond
-            print("type: ", str(type(dummy)))
-            print(sample.getResponse(respond.eta, respond.phi))
+        
+        for respond in responseContainer.responseList:
+            #get iterator from Reponse object (=respond.respond)
+            #next() returns highest energy solution of all samples stored in Response
+            dummy = next(respond.respond.samples())
             final_triplets = [Triplet.name_to_hit_ids(k) for k, v in dummy.items() if v == 1]
             final_doublets = tracks_to_xplets(final_triplets)
         return np.unique(final_doublets, axis=0).tolist()
@@ -392,7 +392,6 @@ class QallseBase(ABC):
 
                 self.logger.info(f'Qubo generated in {exec_time:.2f}s. Size: {len(Q)}. Vars: {n_vars}, '
                                  f'excl. couplers: {n_excl_couplers}, incl. couplers: {n_incl_couplers}')
-        print(sliceContainer.getFirstNonEmptyQubo())
 
         #TODO REMOVE THIS when understood
         #import sys

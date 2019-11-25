@@ -67,17 +67,18 @@ for x in range (1):
 
     # build the qubo
     model.build_model(doublets=doublets)
-    qslice = model.to_qubo()
+    sliceContainer = model.to_qubo()
 
     
     #%%time
     # execute the qubo TODO find QUBO start
-    response = model.sample_qubo_slices(Q=qslice)
+    #returns
+    responseContainer = model.sample_qubo_slices(Q=sliceContainer)
     #response = model.sample_qubo(Q=qslice.getQubo(0,0))
 
 
     # get all output doublets
-    all_doublets = model.process_sample_slices(sample=response)
+    all_doublets = model.process_sample_slices(responseContainer=responseContainer)
     # recreate tracks and resolve remaining conflicts
     final_tracks, final_doublets = TrackRecreaterD().process_results(all_doublets)
 
