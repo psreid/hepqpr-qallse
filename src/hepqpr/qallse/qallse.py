@@ -158,10 +158,10 @@ class Qallse(QallseBase):
         is_real = self.dataw.is_real_xplet(qplet.hit_ids()) == XpletType.REAL
 
         #: apply slicing criteria
-        etas1, etas2 = qplet.t1.eta_slice, qplet.t2.eta_slice
-        ps1, ps2 = qplet.t1.phi_slice, qplet.t2.phi_slice
+        eta_slice_1, eta_slice_2 = qplet.t1.eta_slice, qplet.t2.eta_slice
+        phi_slice_1, phi_slice_2 = qplet.t1.phi_slice, qplet.t2.phi_slice
 
-        if ps1 == ps2 and etas1 == etas2:
+        if phi_slice_1 == phi_slice_2 and eta_slice_1 == eta_slice_2:
             # delta delta curvature between the two triplets
             ret = qplet.delta_curvature > self.config.qplet_max_dcurv
             if ret and is_real:
