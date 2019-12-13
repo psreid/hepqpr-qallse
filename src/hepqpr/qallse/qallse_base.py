@@ -165,7 +165,7 @@ class QallseBase(ABC):
             if bool(qubo.qubo):
                 try:
                     with capture_stdout(logfile):
-                        response = QBSolv().sample_qubo(qubo.getQubo(qubo.eta, qubo.phi), seed=seed, **qbsolv_params)
+                        response = QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params)
                 except: # fails if called from ipython notebook...
                     print(qubo.eta, ' ', qubo.phi)
                     response = QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params)
@@ -192,9 +192,7 @@ class QallseBase(ABC):
         return np.unique(final_doublets, axis=0).tolist()
 
     @classmethod
-    #def process_sample_slices(self, sample: TDimodSample) -> List[TXplet]:
     def process_sample_slices(self, responseContainer=None) -> List[TXplet]:
-    # def process_sample(self, sample: TDimodSample) -> List[TXplet]:
         """
         Convert a sliced QUBO solution into a set of doublets.
         The sample needs to behave like a dictionary, but can also be an instance of dimod.SampleView.
@@ -202,17 +200,18 @@ class QallseBase(ABC):
         :param sample: the QUBO response to process
         :return: the list of final doublets
 
-        ### Fixme Start here to finish response slicing algorithm
-        ### Get Error     final_triplets = [Triplet.name_to_hit_ids(k) for k, v in dummy.items() if v == 1]
-        ### AttributeError: 'Response' object has no attribute 'items'
         """
-        
+        final_triplets = []
         for respond in responseContainer.responseList:
             #get iterator from Reponse object (=respond.respond)
             #next() returns highest energy solution of all samples stored in Response
-            dummy = next(respond.respond.samples())
-            final_triplets = [Triplet.name_to_hit_ids(k) for k, v in dummy.items() if v == 1]
-            final_doublets = tracks_to_xplets(final_triplets)
+
+            #Figure out what data type this is, and append
+
+            final_triplets = final_triplets + [Triplet.name_to_hit_ids(k) for k, v in next(respond.respond.samples()).items() if v == 1]
+
+            # Ditto
+        final_doublets = tracks_to_xplets(final_triplets)
         return np.unique(final_doublets, axis=0).tolist()
 
     @classmethod

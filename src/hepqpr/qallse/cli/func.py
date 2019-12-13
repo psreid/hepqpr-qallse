@@ -104,6 +104,7 @@ def solve_dwave(Q, conf_file, **kwargs):
 # ======= results
 
 def process_response(response):
+    ##FIXME won't work with slicing algorithm
     sample = next(response.samples())
     final_triplets = [Triplet.name_to_hit_ids(k) for k, v in sample.items() if v == 1]
     all_doublets = tracks_to_xplets(final_triplets)
