@@ -98,10 +98,10 @@ class Qallse(QallseBase):
 
         #: Apply criteria that hits must originate from the same slice first
 
-        etas1, etas2 = dblet.h1.eta_slice, dblet.h2.eta_slice
-        ps1, ps2 = dblet.h1.phi_slice, dblet.h2.phi_slice
+        eta_slice_1, eta_slice_2 = dblet.h1.eta_slice, dblet.h2.eta_slice
+        phi_slice_1, phi_slice_2 = dblet.h1.phi_slice, dblet.h2.phi_slice
 
-        if ps1 == ps2 and etas1 == etas2:
+        if phi_slice_1 == phi_slice_2 and eta_slice_1 == eta_slice_2:
 
             v1, v2 = dblet.h1.volayer, dblet.h2.volayer
             ret = v1 >= v2 or v2 > v1 + self.config.max_layer_span
@@ -121,10 +121,10 @@ class Qallse(QallseBase):
 
         #: Apply criteria that hits must originate from the same slice first
 
-        etas1, etas2 = tplet.d1.eta_slice, tplet.d2.eta_slice
-        ps1, ps2 = tplet.d1.phi_slice, tplet.d2.phi_slice
+        eta_slice_1, eta_slice_2 = tplet.d1.eta_slice, tplet.d2.eta_slice
+        phi_slice_1, phi_slice_2 = tplet.d1.phi_slice, tplet.d2.phi_slice
 
-        if ps1 == ps2 and etas1 == etas2:
+        if phi_slice_1 == phi_slice_2 and eta_slice_1 == eta_slice_2:
             is_real = self.dataw.is_real_xplet(tplet.hit_ids()) == XpletType.REAL
 
             # layer skips
