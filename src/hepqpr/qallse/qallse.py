@@ -106,7 +106,6 @@ class Qallse(QallseBase):
         or set(phi_slice_2).union(set(phi_slice_1)) == set(eta_slice_2) \
         or len(set(eta_slice_2) - set(eta_slice_1)) == 0):
             #if phi_slice_1 == phi_slice_2 and eta_slice_1 == eta_slice_2:
-            print("succeess")
             v1, v2 = dblet.h1.volayer, dblet.h2.volayer
             ret = v1 >= v2 or v2 > v1 + self.config.max_layer_span
             if ret and self.dataw.is_real_doublet(dblet.hit_ids()) == XpletType.REAL:

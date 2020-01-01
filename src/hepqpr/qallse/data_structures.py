@@ -22,11 +22,24 @@ class Volayer:
     ordering = [(8, 2), (8, 4), (8, 6), (8, 8), (13, 2), (13, 4), (13, 6), (13, 8), (17, 2), (17, 4)]
     
     #: Define slices in eta and phi
-    #eta_slices = [(-float("inf"), -3), (-3, -2), (-2, -1), (-1, 0), (0, 1), (1, 2), (2, 3), (3, float("inf"))]
-    eta_slices = [(-float("inf"), 1), (1, float("inf"))]
 
-    phi_increment = 0.2
-    phi_overlap = 0.1
+
+    eta_slices = []
+
+    eta_increment = 8
+    eta_overlap = 0.4
+    phi_slices = []
+    for x in range(int(8/eta_increment)):
+        print(x)
+        eta_slices.append((x*eta_increment - 4, (x*eta_increment + eta_increment + eta_overlap - 4)))
+    eta_slices.append((4, float("inf")))
+    eta_slices.append((-float("inf"), -4))
+    print(eta_slices)
+    eta_slices = [(-float("inf"), float("inf"))]
+
+
+    phi_increment = 0.5
+    phi_overlap = 0.3
     phi_slices = []
     for x in range(int(2/phi_increment)):
         print(x)
@@ -56,7 +69,8 @@ class Volayer:
     def get_phi_slice(cls, xval: float, yval: float) -> list:
         """Get phi-slice index for hit (see :py:attr:`~slices`)."""
         phi = np.arctan2(yval,xval)/np.pi+1
-        phislices = list(filter(lambda sl: phi>sl[0] and phi<=sl[1], cls.phi_slices))
+        phislices = list(filter(lambda sl: phi>sl[0] and phi<=sl[1] and sl[1] < 2, cls.phi_slices))
+        #phislices.append(list(filter(lambda sl:  phi<=sl[1] % 2 and sl[1] > 2, cls.phi_slices)))
         phislice_indices = []
 
         for slice in phislices:

@@ -233,6 +233,7 @@ class QallseBase(ABC):
         # Generate Doublet structures from the initial doublets, calling _is_invalid_doublet to apply early cuts
         doublets = []
         for (start_id, end_id) in initial_doublets:
+            #FIXME should be appending as well to doublets eta phi container
             d = Doublet(self.hits[start_id], self.hits[end_id])
             if not self._is_invalid_doublet(d):
                 self.hits[start_id].outer.append(d)
@@ -349,13 +350,16 @@ class QallseBase(ABC):
         #FIXME start here
         for eta in range(len(Volayer.eta_slices)):
             for phi in range(len(Volayer.phi_slices)):
-                #eta_list = []
+                # eta and phi need to be in list structure to use overlapping logic in set unions
+                eta_list = []
+                eta_list.append(eta)
                 phi_list = []
                 phi_list.append(phi)
+
                 Q = {}
                 # 1: qbits with their weight (doublets with a common weight)
                 for q in triplets:
-                    if q.eta_slice == eta and set(q.phi_slice).union(phi_list) == set(q.phi_slice):
+                    if set(q.eta_slice).union(eta_list) == set(q.eta_slice) and set(q.phi_slice).union(phi_list) == set(q.phi_slice):
                         q.weight = self._compute_weight(q)
                         Q[(str(q), str(q))] = q.weight
                     n_vars = len(Q)
@@ -371,13 +375,13 @@ class QallseBase(ABC):
                                         continue
                                     key = (str(t1), str(t2))
                                     if key not in Q and tuple(reversed(key)) not in Q:
-                                        if t1.eta_slice == eta and set(t1.phi_slice).union(phi_list) == set(t1.phi_slice):
+                                        if set(t1.eta_slice).union(eta_list) == set(t1.eta_slice) and set(t1.phi_slice).union(phi_list) == set(t1.phi_slice):
                                             Q[key] = self._compute_conflict_strength(t1, t2)
 
                 n_excl_couplers = len(Q) - n_vars
                 # 2b: inclusion couplers (consecutive doublets with a good triplet)
                 for q in quadruplets:
-                    if q.eta_slice == eta and set(q.phi_slice).union(phi_list) == set(q.phi_slice):
+                    if set(q.eta_slice).union(eta_list) == set(q.eta_slice) and set(q.phi_slice).union(phi_list) == set(q.phi_slice):
                         key = (str(q.t1), str(q.t2))
                         Q[key] = q.strength
 
@@ -386,9 +390,7 @@ class QallseBase(ABC):
                 
                 n_incl_couplers = len(Q) - (n_vars + n_excl_couplers)
                 exec_time = time.process_time() - start_time
-                
-                #DO NOT DO THIS, WILL REMOVE VALUES FOR ALL REFERENCES! thanks
-                #Q.clear()
+
 
                 self.logger.info(f'Qubo generated in {exec_time:.2f}s. Size: {len(Q)}. Vars: {n_vars}, '
                                  f'excl. couplers: {n_excl_couplers}, incl. couplers: {n_incl_couplers}')
