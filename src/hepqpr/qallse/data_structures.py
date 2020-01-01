@@ -23,8 +23,17 @@ class Volayer:
     
     #: Define slices in eta and phi
     #eta_slices = [(-float("inf"), -3), (-3, -2), (-2, -1), (-1, 0), (0, 1), (1, 2), (2, 3), (3, float("inf"))]
-    eta_slices = [(-float("inf"), float("inf"))]
-    phi_slices = [(0, 0.5), (0.5, 1), (1, 1.5), (1.5, 2)]
+    eta_slices = [(-float("inf"), 1), (1, float("inf"))]
+
+    phi_increment = 0.2
+    phi_overlap = 0.1
+    phi_slices = []
+    for x in range(int(2/phi_increment)):
+        print(x)
+        phi_slices.append((x*phi_increment, x*phi_increment + phi_increment + phi_overlap))
+        print(phi_slices)
+
+    #phi_slices = [(0, 0.5), (0.0, 1.0), (1, 1.5), (1.5, 2)]
 
     @classmethod
     def get_index(cls, volayer: Tuple[int, int]) -> int:
@@ -34,18 +43,26 @@ class Volayer:
     @classmethod
     def get_eta_slice(cls, zval: float,  xval: float, yval: float) -> int:
 
-        # eta = -ln tan(r/z  * 0.5)
-        #print(xval, yval, zval)
-        #print((-1)*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/zval * 0.5))))
         eta = (-1)*(zval/np.abs(zval))*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/(zval) * 0.5)))
+        etaslices = list(filter(lambda sl: eta>sl[0] and eta<=sl[1], cls.eta_slices))
+        etaslice_indices = []
+
+        for slice in etaslices:
+            etaslice_indices.append(cls.eta_slices.index(slice))
         """Get eta-slice index for hit (see :py:attr:`~slices`)."""
-        return cls.eta_slices.index(list(filter(lambda sl: eta>sl[0] and eta<=sl[1], cls.eta_slices))[0])
+        return etaslice_indices
     
     @classmethod
-    def get_phi_slice(cls, xval: float, yval: float) -> int:
+    def get_phi_slice(cls, xval: float, yval: float) -> list:
         """Get phi-slice index for hit (see :py:attr:`~slices`)."""
         phi = np.arctan2(yval,xval)/np.pi+1
-        return cls.phi_slices.index(list(filter(lambda sl: phi>sl[0] and phi<=sl[1], cls.phi_slices))[0])
+        phislices = list(filter(lambda sl: phi>sl[0] and phi<=sl[1], cls.phi_slices))
+        phislice_indices = []
+
+        for slice in phislices:
+            phislice_indices.append(cls.phi_slices.index(slice))
+
+        return phislice_indices
 
     @classmethod
     def difference(cls, volayer1, volayer2) -> int:
@@ -121,7 +138,7 @@ class Hit(Xplet):
         self.volayer: int = Volayer.get_index((int(self.volume_id), int(self.layer_id)))
 
         #: TODO allow xplets to have multiple slice indices for overlapping slices
-        #: The slices
+        #: The slices, list of the overlapped slice indices
         self.phi_slice: int = Volayer.get_phi_slice(self.x, self.y)
         self.eta_slice: int = Volayer.get_eta_slice(self.z, self.x, self.y)
         

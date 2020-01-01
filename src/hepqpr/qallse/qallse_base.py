@@ -186,7 +186,6 @@ class QallseBase(ABC):
         :param sample: the QUBO response to process
         :return: the list of final doublets
         """
-        print('yoyo', sample)
         final_triplets = [Triplet.name_to_hit_ids(k) for k, v in sample.items() if v == 1]
         final_doublets = tracks_to_xplets(final_triplets)
         return np.unique(final_doublets, axis=0).tolist()
@@ -234,7 +233,6 @@ class QallseBase(ABC):
         # Generate Doublet structures from the initial doublets, calling _is_invalid_doublet to apply early cuts
         doublets = []
         for (start_id, end_id) in initial_doublets:
-           # start, end = self.hits[start_id], self.hits[end_id]
             d = Doublet(self.hits[start_id], self.hits[end_id])
             if not self._is_invalid_doublet(d):
                 self.hits[start_id].outer.append(d)
@@ -348,13 +346,16 @@ class QallseBase(ABC):
 
         quadruplets = self.quadruplets
         start_time = time.process_time()
-        
+        #FIXME start here
         for eta in range(len(Volayer.eta_slices)):
             for phi in range(len(Volayer.phi_slices)):
+                #eta_list = []
+                phi_list = []
+                phi_list.append(phi)
                 Q = {}
                 # 1: qbits with their weight (doublets with a common weight)
                 for q in triplets:
-                    if q.eta_slice == eta and q.phi_slice == phi:
+                    if q.eta_slice == eta and set(q.phi_slice).union(phi_list) == set(q.phi_slice):
                         q.weight = self._compute_weight(q)
                         Q[(str(q), str(q))] = q.weight
                     n_vars = len(Q)
@@ -370,13 +371,13 @@ class QallseBase(ABC):
                                         continue
                                     key = (str(t1), str(t2))
                                     if key not in Q and tuple(reversed(key)) not in Q:
-                                        if t1.eta_slice == eta and t2.phi_slice == phi:
+                                        if t1.eta_slice == eta and set(t1.phi_slice).union(phi_list) == set(t1.phi_slice):
                                             Q[key] = self._compute_conflict_strength(t1, t2)
 
                 n_excl_couplers = len(Q) - n_vars
                 # 2b: inclusion couplers (consecutive doublets with a good triplet)
                 for q in quadruplets:
-                    if q.eta_slice == eta and q.phi_slice == phi:
+                    if q.eta_slice == eta and set(q.phi_slice).union(phi_list) == set(q.phi_slice):
                         key = (str(q.t1), str(q.t2))
                         Q[key] = q.strength
 
@@ -392,10 +393,6 @@ class QallseBase(ABC):
                 self.logger.info(f'Qubo generated in {exec_time:.2f}s. Size: {len(Q)}. Vars: {n_vars}, '
                                  f'excl. couplers: {n_excl_couplers}, incl. couplers: {n_incl_couplers}')
 
-        #TODO REMOVE THIS when understood
-        #import sys
-        #sys.exit()
-        #TODO UPDATE THIS with above features
         if return_stats:
             return sliceContainer, (n_vars, n_incl_couplers, n_excl_couplers)
         else:
