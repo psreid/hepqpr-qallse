@@ -54,7 +54,7 @@ class Volayer:
         return cls.ordering.index(tuple(volayer))
     
     @classmethod
-    def get_eta_slice(cls, zval: float,  xval: float, yval: float) -> int:
+    def get_eta_slice(cls, zval: float,  xval: float, yval: float) -> list:
 
         eta = (-1)*(zval/np.abs(zval))*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/(zval) * 0.5)))
         # Determine the eta slice the hit belongs to
