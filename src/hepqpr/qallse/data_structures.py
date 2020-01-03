@@ -57,9 +57,11 @@ class Volayer:
     def get_eta_slice(cls, zval: float,  xval: float, yval: float) -> int:
 
         eta = (-1)*(zval/np.abs(zval))*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/(zval) * 0.5)))
+        # Determine the eta slice the hit belongs to
         etaslices = list(filter(lambda sl: eta>sl[0] and eta<=sl[1], cls.eta_slices))
-        etaslice_indices = []
 
+        etaslice_indices = []
+        #populate etaslice indices with cls.etaslices
         for slice in etaslices:
             etaslice_indices.append(cls.eta_slices.index(slice))
         """Get eta-slice index for hit (see :py:attr:`~slices`)."""
@@ -69,10 +71,16 @@ class Volayer:
     def get_phi_slice(cls, xval: float, yval: float) -> list:
         """Get phi-slice index for hit (see :py:attr:`~slices`)."""
         phi = np.arctan2(yval,xval)/np.pi+1
-        phislices = list(filter(lambda sl: phi>sl[0] and phi<=sl[1] and sl[1] < 2, cls.phi_slices))
-        #phislices.append(list(filter(lambda sl:  phi<=sl[1] % 2 and sl[1] > 2, cls.phi_slices)))
-        phislice_indices = []
+        # Determine which phi slice the hit belongs to
+        phislices = list(filter(lambda sl: phi>sl[0] and phi<=sl[1], cls.phi_slices))
 
+        # if phi belongs to the first phi slice and is within the last phi slice overlap region
+        if phi <= cls.phi_slices[0][0] + cls.phi_overlap:
+
+            phislices.append(cls.phi_slices[len(cls.phi_slices) - 1])
+
+        phislice_indices = []
+        # populate phislice_indices with each respective cls.phislice index
         for slice in phislices:
             phislice_indices.append(cls.phi_slices.index(slice))
 
