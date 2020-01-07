@@ -23,26 +23,22 @@ class Volayer:
     
     #: Define slices in eta and phi
 
-
+    eta_increment = 2
+    eta_overlap = 1
     eta_slices = []
-
-    eta_increment = 8
-    eta_overlap = 0.4
-    phi_slices = []
     for x in range(int(8/eta_increment)):
         print(x)
         eta_slices.append((x*eta_increment - 4, (x*eta_increment + eta_increment + eta_overlap - 4)))
     eta_slices.append((4, float("inf")))
-    eta_slices.append((-float("inf"), -4))
+    eta_slices.append((-float("inf"), -4 + eta_overlap))
     print(eta_slices)
-    eta_slices = [(-float("inf"), float("inf"))]
+    #eta_slices = [(-float("inf"), float("inf"))]
 
 
     phi_increment = 0.5
-    phi_overlap = 0.3
+    phi_overlap = 0.2
     phi_slices = []
     for x in range(int(2/phi_increment)):
-        print(x)
         phi_slices.append((x*phi_increment, x*phi_increment + phi_increment + phi_overlap))
         print(phi_slices)
 
@@ -56,7 +52,9 @@ class Volayer:
     @classmethod
     def get_eta_slice(cls, zval: float,  xval: float, yval: float) -> list:
 
-        eta = (-1)*(zval/np.abs(zval))*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/(zval) * 0.5)))
+        # broken eta = (-1)*(zval/np.abs(zval))*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/zval * 0.5)))
+        eta = (-1) * (zval / np.abs(zval)) * np.log(np.abs(np.sqrt(xval ** 2 + yval ** 2) / zval * 0.5))
+        print(xval, yval, eta)
         # Determine the eta slice the hit belongs to
         etaslices = list(filter(lambda sl: eta>sl[0] and eta<=sl[1], cls.eta_slices))
 
@@ -70,7 +68,7 @@ class Volayer:
     @classmethod
     def get_phi_slice(cls, xval: float, yval: float) -> list:
         """Get phi-slice index for hit (see :py:attr:`~slices`)."""
-        phi = np.arctan2(yval,xval)/np.pi+1
+        phi = np.arctan2(yval, xval)/np.pi+1
         # Determine which phi slice the hit belongs to
         phislices = list(filter(lambda sl: phi>sl[0] and phi<=sl[1], cls.phi_slices))
 
@@ -83,6 +81,7 @@ class Volayer:
         # populate phislice_indices with each respective cls.phislice index
         for slice in phislices:
             phislice_indices.append(cls.phi_slices.index(slice))
+
 
         return phislice_indices
 
@@ -276,8 +275,9 @@ class Quadruplet(Xplet):
         #: Does this need to be reworked with the slicing algorithm?
         return self.t1.doublets() + [self.t2.d2]
 
+
 class QuboSlice(object):
-# TODO Make QUBO slice class
+
     def __init__(self, q: {}, eta: int, phi: int):
         self.qubo = q
         self.eta = eta
@@ -333,7 +333,9 @@ class ResponseSlice(object):
             self.phi = phi
 '''
 
+
 class ResponseContainer(object):
+
     def __init__(self):
         self.responseList = []
 
