@@ -8,7 +8,7 @@ from typing import Union
 import pandas as pd
 from dwave_qbsolv import QBSolv
 from .other.stdout_redirect import capture_stdout
-from memory_profiler import profile
+#from memory_profiler import profile
 from .data_structures import *
 from .data_wrapper import DataWrapper
 from .utils import tracks_to_xplets
@@ -139,6 +139,7 @@ class QallseBase(ABC):
 
         return (response, exec_time) if return_time else response
 
+    @profile
     def sample_qubo_slices(self, Q: TQubo = None, return_time=False, logfile: str = None, seed: int=None, **qbsolv_params)\
     -> ResponseContainer:
             #-> Union[object, Tuple[object, float]]:
@@ -228,7 +229,7 @@ class QallseBase(ABC):
         cls.doublets = doublets
 
     # ---------------------------------------------
-
+    @profile
     def _create_doublets(self, initial_doublets):
         # Generate Doublet structures from the initial doublets, calling _is_invalid_doublet to apply early cuts
         doublets = []
@@ -249,6 +250,8 @@ class QallseBase(ABC):
     def _is_invalid_doublet(self, dblet: Doublet) -> bool:
         # [ABSTRACT] Apply early cuts on doublets, return True if the doublet should be discarded.
         pass
+
+    @profile
     def _create_triplets(self):
         # Generate Triplet structures from Doublets, calling _is_invalid_triplet to apply early cuts
         triplets = []
@@ -329,6 +332,7 @@ class QallseBase(ABC):
         pass
 
     # ---------------------------------------------
+    @profile
     def to_qubo(self, return_stats=False) -> SliceContainer:
         #Union[TQubo, Tuple[TQubo, Tuple[int, int, int]]]:
         """

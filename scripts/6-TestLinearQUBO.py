@@ -10,6 +10,7 @@ import logging
 from hepqpr.qallse.plotting import *
 from hepqpr.qallse import *
 from hepqpr.qallse.dsmaker import create_dataset
+#from memory_profiler import profile
 from typing import Tuple, List, Dict
 from enum import IntEnum
 
@@ -27,7 +28,7 @@ logging.getLogger('hepqpr').setLevel(logging.DEBUG)
 # == DATASET CONFIG
 
 dsmaker_config = dict(
-    density=0.0025,  # 1%
+    density=0.30,  # 1%
 )
 
 # == INPUT CONFIG
@@ -37,7 +38,7 @@ add_missing = True
 
 # == RUN CONFIG
 
-model_class = QallseD0 # model class to use
+model_class = Qallse # model class to use
 extra_config = dict() # configuration arguments overriding the defaults
 
 

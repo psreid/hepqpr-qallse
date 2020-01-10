@@ -23,8 +23,8 @@ class Volayer:
     
     #: Define slices in eta and phi
 
-    eta_increment = 2
-    eta_overlap = 1
+    eta_increment = 4
+    eta_overlap = 0.5
     eta_slices = []
     for x in range(int(8/eta_increment)):
         print(x)
@@ -36,7 +36,7 @@ class Volayer:
 
 
     phi_increment = 0.5
-    phi_overlap = 0.2
+    phi_overlap = 0.15
     phi_slices = []
     for x in range(int(2/phi_increment)):
         phi_slices.append((x*phi_increment, x*phi_increment + phi_increment + phi_overlap))
