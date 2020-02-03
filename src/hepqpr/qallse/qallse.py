@@ -160,26 +160,26 @@ class Qallse(QallseBase):
         # layer miss, R-Z plane delta angles and curvature) and apply a cut on it.
         is_real = self.dataw.is_real_xplet(qplet.hit_ids()) == XpletType.REAL
 
-        #: apply slicing criteria
-        eta_slice_1, eta_slice_2 = qplet.t1.eta_slice, qplet.t2.eta_slice
-        phi_slice_1, phi_slice_2 = qplet.t1.phi_slice, qplet.t2.phi_slice
+        #: apply slicing criteria FIXME may not be required, causes more missing than performance boost
+        #eta_slice_1, eta_slice_2 = qplet.t1.eta_slice, qplet.t2.eta_slice
+        #phi_slice_1, phi_slice_2 = qplet.t1.phi_slice, qplet.t2.phi_slice
 
-        if phi_slice_1 == phi_slice_2 and eta_slice_1 == eta_slice_2:
+        #if phi_slice_1 == phi_slice_2 and eta_slice_1 == eta_slice_2:
             # delta delta curvature between the two triplets
-            ret = qplet.delta_curvature > self.config.qplet_max_dcurv
-            if ret and is_real:
-                self.hard_cuts_stats.append(f'qplet,{qplet},dcurv,{qplet.delta_curvature},')
-                return not self.config.cheat
+        ret = qplet.delta_curvature > self.config.qplet_max_dcurv
+        if ret and is_real:
+            self.hard_cuts_stats.append(f'qplet,{qplet},dcurv,{qplet.delta_curvature},')
+            return not self.config.cheat
 
-            # strength of the quadruplet
-            qplet.strength = self._compute_strength(qplet)
-            ret = qplet.strength > self.config.qplet_max_strength
-            if ret and is_real:
-                self.hard_cuts_stats.append(f'qplet,{qplet},strength,{qplet.strength},')
-                return not self.config.cheat
-            return ret
-        else:
-            return True
+        # strength of the quadruplet
+        qplet.strength = self._compute_strength(qplet)
+        ret = qplet.strength > self.config.qplet_max_strength
+        if ret and is_real:
+            self.hard_cuts_stats.append(f'qplet,{qplet},strength,{qplet.strength},')
+            return not self.config.cheat
+        return ret
+        #else:
+        #    return True
 
     # --------------- qubo weights
 

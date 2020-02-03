@@ -168,7 +168,7 @@ class QallseBase(ABC):
                     with capture_stdout(logfile):
                         response = QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params)
                 except: # fails if called from ipython notebook...
-                    print(qubo.eta, ' ', qubo.phi)
+                    #print(qubo.eta, ' ', qubo.phi)
                     response = QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params)
             exec_time = time.process_time() - start_time
             if bool(qubo.qubo):
@@ -231,8 +231,13 @@ class QallseBase(ABC):
     # ---------------------------------------------
     @profile
     def _create_doublets(self, initial_doublets):
+        from collections import defaultdict
         # Generate Doublet structures from the initial doublets, calling _is_invalid_doublet to apply early cuts
+        #for eta in range(len(Volayer.eta_slices)):
+        #for phi in range(len(Volayer.phi_slices)):
+        #doublets = defaultdict(list)
         doublets = []
+        #doublets = [[[] for i in range((len(Volayer.phi_slices)))]for j in range(len(Volayer.eta_slices))]
         for (start_id, end_id) in initial_doublets:
             #FIXME should be appending as well to doublets eta phi container
             d = Doublet(self.hits[start_id], self.hits[end_id])
@@ -240,6 +245,17 @@ class QallseBase(ABC):
                 self.hits[start_id].outer.append(d)
                 self.hits[end_id].inner.append(d)
                 doublets.append(d)
+                '''
+                doublets[d.eta_slice[0], d.phi_slice[0]].append(d)
+                if len(d.eta_slice) == 2 and len(d.phi_slice) == 2:
+                    doublets[d.eta_slice[1], d.phi_slice[1]].append(d)
+                elif len(d.eta_slice) == 2 and len(d.phi_slice) == 1:
+                    doublets[d.eta_slice[1], d.phi_slice[0]].append(d)
+                elif len(d.eta_slice) == 1 and len(d.phi_slice) == 2:
+                    doublets[d.eta_slice[0], d.phi_slice[1]].append(d)
+                #doublets.append(d)
+                '''
+
 
         self.logger.info(f'created {len(doublets)} doublets.')
         self.doublets = doublets
@@ -255,7 +271,11 @@ class QallseBase(ABC):
     def _create_triplets(self):
         # Generate Triplet structures from Doublets, calling _is_invalid_triplet to apply early cuts
         triplets = []
+        #for eta in range((len(Volayer.eta_slices))):
+            #for phi in range((len(Volayer.phi_slices))):
+                 #for d1 in self.doublets[eta, phi]:
         for d1 in self.doublets:
+
             for d2 in d1.h2.outer:
                 t = Triplet(d1, d2)
                 if not self._is_invalid_triplet(t):

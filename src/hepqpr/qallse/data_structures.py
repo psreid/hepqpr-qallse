@@ -23,20 +23,20 @@ class Volayer:
     
     #: Define slices in eta and phi
 
-    eta_increment = 4
-    eta_overlap = 0.5
+    eta_increment = 3
+    eta_overlap = 0.3
     eta_slices = []
-    for x in range(int(8/eta_increment)):
+    for x in range(int(9/eta_increment)):
         print(x)
-        eta_slices.append((x*eta_increment - 4, (x*eta_increment + eta_increment + eta_overlap - 4)))
-    eta_slices.append((4, float("inf")))
-    eta_slices.append((-float("inf"), -4 + eta_overlap))
+        eta_slices.append((x*eta_increment - 4.5, (x*eta_increment + eta_increment + eta_overlap - 4.5)))
+    eta_slices.append((4.5, float("inf")))
+    eta_slices.append((-float("inf"), -4.5 + eta_overlap))
     print(eta_slices)
     #eta_slices = [(-float("inf"), float("inf"))]
 
 
     phi_increment = 0.5
-    phi_overlap = 0.15
+    phi_overlap = 0.1
     phi_slices = []
     for x in range(int(2/phi_increment)):
         phi_slices.append((x*phi_increment, x*phi_increment + phi_increment + phi_overlap))
@@ -206,6 +206,20 @@ class Doublet(Xplet):
         self.coord_2d = hit_end.coord_2d - hit_start.coord_2d
         #: The 3D vector of this doublet, i.e. `(∆x,∆y,∆z)`
         self.coord_3d = hit_end.coord_3d - hit_start.coord_3d
+
+
+#: Container carrying all qubo slices
+class DoubletContainer(object):
+    def __init__(self):
+        self.DoubletList = []
+
+
+    def __str__(self):
+        return 'Container with {0} slices'.format(len(self.quboList))
+
+    def addQubo(self, hit_start: Hit, hit_end: Hit, hit_eta: int, hit_phi: int):
+
+        self.DoubletList.append(d)
 
 
 class Triplet(Xplet):
