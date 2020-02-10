@@ -28,7 +28,7 @@ logging.getLogger('hepqpr').setLevel(logging.DEBUG)
 # == DATASET CONFIG
 
 dsmaker_config = dict(
-    density=0.10,  # 1%
+    density=0.01,  # 1%
 )
 
 # == INPUT CONFIG

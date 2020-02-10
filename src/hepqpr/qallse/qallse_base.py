@@ -139,7 +139,7 @@ class QallseBase(ABC):
 
         return (response, exec_time) if return_time else response
 
-    @profile
+    #@profile
     def sample_qubo_slices(self, Q: TQubo = None, return_time=False, logfile: str = None, seed: int=None, **qbsolv_params)\
     -> ResponseContainer:
             #-> Union[object, Tuple[object, float]]:
@@ -166,6 +166,7 @@ class QallseBase(ABC):
             if bool(qubo.qubo):
                 try:
                     with capture_stdout(logfile):
+                        ##make dummy QBSOLV
                         response = QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params)
                 except: # fails if called from ipython notebook...
                     #print(qubo.eta, ' ', qubo.phi)
@@ -202,15 +203,16 @@ class QallseBase(ABC):
 
         """
         final_triplets = []
+
         for respond in responseContainer.responseList:
             #get iterator from Reponse object (=respond.respond)
             #next() returns highest energy solution of all samples stored in Response
 
             #Figure out what data type this is, and append
+            #final_triplets = Union[final_triplets, (set([Triplet.name_to_hit_ids(k) for k, v in next(respond.respond.samples()).items() if v == 1]))]
 
             final_triplets = final_triplets + [Triplet.name_to_hit_ids(k) for k, v in next(respond.respond.samples()).items() if v == 1]
 
-            # Ditto
         final_doublets = tracks_to_xplets(final_triplets)
         return np.unique(final_doublets, axis=0).tolist()
 
@@ -229,7 +231,7 @@ class QallseBase(ABC):
         cls.doublets = doublets
 
     # ---------------------------------------------
-    @profile
+    #@profile
     def _create_doublets(self, initial_doublets):
         from collections import defaultdict
         # Generate Doublet structures from the initial doublets, calling _is_invalid_doublet to apply early cuts
@@ -267,7 +269,7 @@ class QallseBase(ABC):
         # [ABSTRACT] Apply early cuts on doublets, return True if the doublet should be discarded.
         pass
 
-    @profile
+    #@profile
     def _create_triplets(self):
         # Generate Triplet structures from Doublets, calling _is_invalid_triplet to apply early cuts
         triplets = []
@@ -352,7 +354,7 @@ class QallseBase(ABC):
         pass
 
     # ---------------------------------------------
-    @profile
+    #@profile
     def to_qubo(self, return_stats=False) -> SliceContainer:
         #Union[TQubo, Tuple[TQubo, Tuple[int, int, int]]]:
         """

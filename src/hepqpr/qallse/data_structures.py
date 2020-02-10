@@ -24,10 +24,10 @@ class Volayer:
     #: Define slices in eta and phi
 
     eta_increment = 3
-    eta_overlap = 0.3
+    eta_overlap = 1
     eta_slices = []
     for x in range(int(9/eta_increment)):
-        print(x)
+        #print(x)
         eta_slices.append((x*eta_increment - 4.5, (x*eta_increment + eta_increment + eta_overlap - 4.5)))
     eta_slices.append((4.5, float("inf")))
     eta_slices.append((-float("inf"), -4.5 + eta_overlap))
@@ -36,7 +36,7 @@ class Volayer:
 
 
     phi_increment = 0.5
-    phi_overlap = 0.1
+    phi_overlap = 0.3
     phi_slices = []
     for x in range(int(2/phi_increment)):
         phi_slices.append((x*phi_increment, x*phi_increment + phi_increment + phi_overlap))
@@ -53,11 +53,15 @@ class Volayer:
     def get_eta_slice(cls, zval: float,  xval: float, yval: float) -> list:
 
         # broken eta = (-1)*(zval/np.abs(zval))*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/zval * 0.5)))
-        eta = (-1) * (zval / np.abs(zval)) * np.log(np.abs(np.sqrt(xval ** 2 + yval ** 2) / zval * 0.5))
-        print(xval, yval, eta)
+        eta = (-1) * (zval / np.abs(zval)) * np.log(np.tan((np.arctan(np.abs(np.sqrt(xval ** 2 + yval ** 2) / zval)) * 0.5)))
+        print(eta)
+        eta = (-1) * (zval / np.abs(zval)) * np.log(np.tan((np.arctan(np.abs(yval/zval)) * 0.5)))
+        print(eta , "r")
+
+        print(np.sqrt(xval ** 2 + yval ** 2), zval, eta)
         # Determine the eta slice the hit belongs to
         etaslices = list(filter(lambda sl: eta>sl[0] and eta<=sl[1], cls.eta_slices))
-
+        print(etaslices)
         etaslice_indices = []
         #populate etaslice indices with cls.etaslices
         for slice in etaslices:
@@ -68,7 +72,8 @@ class Volayer:
     @classmethod
     def get_phi_slice(cls, xval: float, yval: float) -> list:
         """Get phi-slice index for hit (see :py:attr:`~slices`)."""
-        phi = np.arctan2(yval, xval)/np.pi+1
+        phi = np.arctan2(yval, xval)/np.pi + 1
+        #phi = np.arctan(yval/xval)/np.pi
         # Determine which phi slice the hit belongs to
         phislices = list(filter(lambda sl: phi>sl[0] and phi<=sl[1], cls.phi_slices))
 
@@ -76,7 +81,7 @@ class Volayer:
         if phi <= cls.phi_slices[0][0] + cls.phi_overlap:
 
             phislices.append(cls.phi_slices[len(cls.phi_slices) - 1])
-
+        #print(phislices)
         phislice_indices = []
         # populate phislice_indices with each respective cls.phislice index
         for slice in phislices:

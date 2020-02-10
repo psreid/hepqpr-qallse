@@ -127,7 +127,11 @@ class Qallse(QallseBase):
         eta_slice_1, eta_slice_2 = tplet.d1.eta_slice, tplet.d2.eta_slice
         phi_slice_1, phi_slice_2 = tplet.d1.phi_slice, tplet.d2.phi_slice
 
-        if phi_slice_1 == phi_slice_2 and eta_slice_1 == eta_slice_2:
+        #if phi_slice_1 == phi_slice_2 and eta_slice_1 == eta_slice_2:
+        if set(phi_slice_2).union(set(phi_slice_1)) == set(phi_slice_1) or set(phi_slice_2).union(set(phi_slice_1)) == set(phi_slice_2) \
+        or len(set(phi_slice_2) - set(phi_slice_1)) == 0 and (set(eta_slice_2).union(set(eta_slice_1)) == set(eta_slice_1) \
+        or set(phi_slice_2).union(set(phi_slice_1)) == set(eta_slice_2) \
+        or len(set(eta_slice_2) - set(eta_slice_1)) == 0):
             is_real = self.dataw.is_real_xplet(tplet.hit_ids()) == XpletType.REAL
 
             # layer skips
