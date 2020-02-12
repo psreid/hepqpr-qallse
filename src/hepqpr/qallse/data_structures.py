@@ -53,14 +53,18 @@ class Volayer:
     def get_eta_slice(cls, zval: float,  xval: float, yval: float) -> list:
 
         # broken eta = (-1)*(zval/np.abs(zval))*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/zval * 0.5)))
-        eta = (-1) * (zval / np.abs(zval)) * np.log(np.tan((np.arctan(np.abs(np.sqrt(xval ** 2 + yval ** 2) / zval)) * 0.5)))
-        print(eta)
+        #eta = (-1) * (zval / np.abs(zval)) * np.log(np.tan((np.arctan(np.abs(np.sqrt(xval ** 2 + yval ** 2) / zval)) * 0.5)))
+        #print(eta)
         eta = (-1) * (zval / np.abs(zval)) * np.log(np.tan((np.arctan(np.abs(yval/zval)) * 0.5)))
-        print(eta , "r")
+
+
 
         print(np.sqrt(xval ** 2 + yval ** 2), zval, eta)
+        if np.abs(zval) < 30:
+            etaslices = cls.eta_slices
         # Determine the eta slice the hit belongs to
-        etaslices = list(filter(lambda sl: eta>sl[0] and eta<=sl[1], cls.eta_slices))
+        else:
+            etaslices = list(filter(lambda sl: eta>sl[0] and eta<=sl[1], cls.eta_slices))
         print(etaslices)
         etaslice_indices = []
         #populate etaslice indices with cls.etaslices
@@ -245,7 +249,7 @@ class Triplet(Xplet):
         #: The slice in which the triplet belongs to
         self.phi_slice = d2.phi_slice
         self.eta_slice = d2.eta_slice
-
+        print(self.eta_slice)
         #: TODO Identifiy differences between implied helix curvature and menger curvature for impact parameter performance
         #: Radius of curvature, see `Menger curvature <https://en.wikipedia.org/wiki/Menger_curvature>`_.
         self.curvature = curvature(*[h.coord_2d for h in self.hits])

@@ -169,7 +169,6 @@ class QallseBase(ABC):
                         ##make dummy QBSOLV
                         response = QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params)
                 except: # fails if called from ipython notebook...
-                    #print(qubo.eta, ' ', qubo.phi)
                     response = QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params)
             exec_time = time.process_time() - start_time
             if bool(qubo.qubo):
