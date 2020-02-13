@@ -23,19 +23,23 @@ class Volayer:
     
     #: Define slices in eta and phi
 
-    eta_increment = 3
-    eta_overlap = 1
+    eta_increment = 0.2
+    eta_overlap = 0.05
     eta_slices = []
-    for x in range(int(9/eta_increment)):
+    '''for x in range(int(9/eta_increment)):
         #print(x)
         eta_slices.append((x*eta_increment - 4.5, (x*eta_increment + eta_increment + eta_overlap - 4.5)))
     eta_slices.append((4.5, float("inf")))
     eta_slices.append((-float("inf"), -4.5 + eta_overlap))
+    '''
+    for x in range(int(2 / eta_increment)):
+        # print(x)
+        eta_slices.append((x * eta_increment -1, (x * eta_increment + eta_increment + eta_overlap -1)))
     print(eta_slices)
     #eta_slices = [(-float("inf"), float("inf"))]
 
 
-    phi_increment = 0.5
+    phi_increment = 2.0
     phi_overlap = 0.3
     phi_slices = []
     for x in range(int(2/phi_increment)):
@@ -50,6 +54,27 @@ class Volayer:
         return cls.ordering.index(tuple(volayer))
     
     @classmethod
+    def get_eta_slice(cls, zval: float, xval: float, yval: float) -> list:
+        #FIXME this is RZ plane
+        # broken eta = (-1)*(zval/np.abs(zval))*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/zval * 0.5)))
+        # eta = (-1) * (zval / np.abs(zval)) * np.log(np.tan((np.arctan(np.abs(np.sqrt(xval ** 2 + yval ** 2) / zval)) * 0.5)))
+        # print(eta)
+        eta = np.arctan((np.sqrt(yval**2 + xval**2) / zval))*0.5/np.pi
+        print(eta)
+        if np.sqrt(yval**2 + xval**2) < 30:
+            etaslices = cls.eta_slices
+        # Determine the eta slice the hit belongs to
+        else:
+            etaslices = list(filter(lambda sl: eta > sl[0] and eta <= sl[1], cls.eta_slices))
+
+        etaslice_indices = []
+        # populate etaslice indices with cls.etaslices
+        for slice in etaslices:
+            etaslice_indices.append(cls.eta_slices.index(slice))
+        """Get eta-slice index for hit (see :py:attr:`~slices`)."""
+        return etaslice_indices
+
+    '''
     def get_eta_slice(cls, zval: float,  xval: float, yval: float) -> list:
 
         # broken eta = (-1)*(zval/np.abs(zval))*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/zval * 0.5)))
@@ -59,20 +84,19 @@ class Volayer:
 
 
 
-        print(np.sqrt(xval ** 2 + yval ** 2), zval, eta)
         if np.abs(zval) < 30:
             etaslices = cls.eta_slices
         # Determine the eta slice the hit belongs to
         else:
             etaslices = list(filter(lambda sl: eta>sl[0] and eta<=sl[1], cls.eta_slices))
-        print(etaslices)
+
         etaslice_indices = []
         #populate etaslice indices with cls.etaslices
         for slice in etaslices:
             etaslice_indices.append(cls.eta_slices.index(slice))
         """Get eta-slice index for hit (see :py:attr:`~slices`)."""
         return etaslice_indices
-    
+    '''
     @classmethod
     def get_phi_slice(cls, xval: float, yval: float) -> list:
         """Get phi-slice index for hit (see :py:attr:`~slices`)."""
