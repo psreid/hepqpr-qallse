@@ -23,8 +23,8 @@ class Volayer:
     
     #: Define slices in eta and phi
 
-    eta_increment = 0.05
-    eta_overlap = 0.03
+    eta_increment = 0.2
+    eta_overlap = 0.02
     eta_slices = []
     '''for x in range(int(9/eta_increment)):
         #print(x)
@@ -32,15 +32,18 @@ class Volayer:
     eta_slices.append((4.5, float("inf")))
     eta_slices.append((-float("inf"), -4.5 + eta_overlap))
     '''
-    for x in range(int(0.6 / eta_increment)):
-        # print(x)
-        eta_slices.append((x * eta_increment -0.3, (x * eta_increment + eta_increment + eta_overlap -0.3)))
+    for x in range(int(0.8 / eta_increment)):
+        print(x)
+        eta_slices.append((x * eta_increment - 0.4, (x * eta_increment + eta_increment + eta_overlap - 0.4)))
+
+    #eta_slices = [(-float("inf"), 0 ),(0,float("inf"))]
+    #eta_slices = [(-float("inf"),float("inf"))]
+
     print(eta_slices)
-    #eta_slices = [(-float("inf"), float("inf"))]
 
 
     phi_increment = 2.0
-    phi_overlap = 0.3
+    phi_overlap = 0.4
     phi_slices = []
     for x in range(int(2/phi_increment)):
         phi_slices.append((x*phi_increment, x*phi_increment + phi_increment + phi_overlap))
@@ -107,7 +110,7 @@ class Volayer:
         phislices = list(filter(lambda sl: phi>sl[0] and phi<=sl[1], cls.phi_slices))
 
         # if phi belongs to the first phi slice and is within the last phi slice overlap region
-        if phi <= cls.phi_slices[0][0] + cls.phi_overlap:
+        if phi <= (cls.phi_slices[0][0] + cls.phi_overlap):
 
             phislices.append(cls.phi_slices[len(cls.phi_slices) - 1])
         #print(phislices)

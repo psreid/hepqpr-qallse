@@ -101,9 +101,9 @@ class Qallse(QallseBase):
         eta_slice_1, eta_slice_2 = dblet.h1.eta_slice, dblet.h2.eta_slice
         phi_slice_1, phi_slice_2 = dblet.h1.phi_slice, dblet.h2.phi_slice
 
-        if set(phi_slice_2).union(set(phi_slice_1)) == set(phi_slice_1) or set(phi_slice_2).union(set(phi_slice_1)) == set(phi_slice_2) \
-        or len(set(phi_slice_2) - set(phi_slice_1)) == 0 and (set(eta_slice_2).union(set(eta_slice_1)) == set(eta_slice_1) \
-        or set(phi_slice_2).union(set(phi_slice_1)) == set(eta_slice_2) \
+        if (set(phi_slice_2).union(set(phi_slice_1)) == set(phi_slice_1) or set(phi_slice_2).union(set(phi_slice_1)) == set(phi_slice_2) \
+        or len(set(phi_slice_2) - set(phi_slice_1)) == 0) and (set(eta_slice_2).union(set(eta_slice_1)) == set(eta_slice_1) \
+        or set(eta_slice_2).union(set(eta_slice_1)) == set(eta_slice_2) \
         or len(set(eta_slice_2) - set(eta_slice_1)) == 0):
             #if phi_slice_1 == phi_slice_2 and eta_slice_1 == eta_slice_2:
             v1, v2 = dblet.h1.volayer, dblet.h2.volayer
@@ -128,10 +128,11 @@ class Qallse(QallseBase):
         phi_slice_1, phi_slice_2 = tplet.d1.phi_slice, tplet.d2.phi_slice
 
         #if phi_slice_1 == phi_slice_2 and eta_slice_1 == eta_slice_2:
-        if set(phi_slice_2).union(set(phi_slice_1)) == set(phi_slice_1) or set(phi_slice_2).union(set(phi_slice_1)) == set(phi_slice_2) \
+        '''if set(phi_slice_2).union(set(phi_slice_1)) == set(phi_slice_1) or set(phi_slice_2).union(set(phi_slice_1)) == set(phi_slice_2) \
         or len(set(phi_slice_2) - set(phi_slice_1)) == 0 and (set(eta_slice_2).union(set(eta_slice_1)) == set(eta_slice_1) \
         or set(phi_slice_2).union(set(phi_slice_1)) == set(eta_slice_2) \
-        or len(set(eta_slice_2) - set(eta_slice_1)) == 0):
+        or len(set(eta_slice_2) - set(eta_slice_1)) == 0):'''
+        if 1 == 1:
             is_real = self.dataw.is_real_xplet(tplet.hit_ids()) == XpletType.REAL
 
             # layer skips

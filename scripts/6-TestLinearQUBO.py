@@ -28,7 +28,7 @@ logging.getLogger('hepqpr').setLevel(logging.DEBUG)
 # == DATASET CONFIG
 
 dsmaker_config = dict(
-    density=0.01,  # 1%
+    density=0.2,  # 1%
 )
 
 # == INPUT CONFIG
@@ -45,7 +45,7 @@ extra_config = dict() # configuration arguments overriding the defaults
 
 tempdir = tempfile.TemporaryDirectory()
 print(f'using {tempdir.name}')
-metas, path = create_dataset(output_path=tempdir.name, gen_doublets=True, **dsmaker_config)
+metas, path = create_dataset(output_path=tempdir.name, random_seed=240834351 ,gen_doublets=True, **dsmaker_config)
 #path =  '/tmp/hpt-collapse/ds10/event000001000'
 
 with open(path + '-meta.json') as f:
