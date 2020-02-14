@@ -23,8 +23,8 @@ class Volayer:
     
     #: Define slices in eta and phi
 
-    eta_increment = 0.2
-    eta_overlap = 0.05
+    eta_increment = 0.05
+    eta_overlap = 0.03
     eta_slices = []
     '''for x in range(int(9/eta_increment)):
         #print(x)
@@ -32,9 +32,9 @@ class Volayer:
     eta_slices.append((4.5, float("inf")))
     eta_slices.append((-float("inf"), -4.5 + eta_overlap))
     '''
-    for x in range(int(2 / eta_increment)):
+    for x in range(int(0.6 / eta_increment)):
         # print(x)
-        eta_slices.append((x * eta_increment -1, (x * eta_increment + eta_increment + eta_overlap -1)))
+        eta_slices.append((x * eta_increment -0.3, (x * eta_increment + eta_increment + eta_overlap -0.3)))
     print(eta_slices)
     #eta_slices = [(-float("inf"), float("inf"))]
 
@@ -60,9 +60,10 @@ class Volayer:
         # eta = (-1) * (zval / np.abs(zval)) * np.log(np.tan((np.arctan(np.abs(np.sqrt(xval ** 2 + yval ** 2) / zval)) * 0.5)))
         # print(eta)
         eta = np.arctan((np.sqrt(yval**2 + xval**2) / zval))*0.5/np.pi
-        print(eta)
-        if np.sqrt(yval**2 + xval**2) < 30:
+        #print(eta)
+        if np.sqrt(yval**2 + xval**2) < 40:
             etaslices = cls.eta_slices
+
         # Determine the eta slice the hit belongs to
         else:
             etaslices = list(filter(lambda sl: eta > sl[0] and eta <= sl[1], cls.eta_slices))
@@ -273,7 +274,7 @@ class Triplet(Xplet):
         #: The slice in which the triplet belongs to
         self.phi_slice = d2.phi_slice
         self.eta_slice = d2.eta_slice
-        print(self.eta_slice)
+        #print(self.eta_slice)
         #: TODO Identifiy differences between implied helix curvature and menger curvature for impact parameter performance
         #: Radius of curvature, see `Menger curvature <https://en.wikipedia.org/wiki/Menger_curvature>`_.
         self.curvature = curvature(*[h.coord_2d for h in self.hits])
