@@ -92,10 +92,8 @@ class QallseBase(ABC):
         #global initial_doublets
         initial_doublets = doublets.values if isinstance(doublets, pd.DataFrame) else doublets
 
-         #p = Pool()
         self._create_doublets(initial_doublets)
-        #self.doublets = multiprocess_doublets(initial_doublets)
-         #p.close()
+
         self._create_triplets()
         self._create_quadruplets()
 

@@ -26,24 +26,18 @@ class Volayer:
     eta_increment = 0.2
     eta_overlap = 0.02
     eta_slices = []
-    '''for x in range(int(9/eta_increment)):
-        #print(x)
-        eta_slices.append((x*eta_increment - 4.5, (x*eta_increment + eta_increment + eta_overlap - 4.5)))
-    eta_slices.append((4.5, float("inf")))
-    eta_slices.append((-float("inf"), -4.5 + eta_overlap))
-    '''
+    #eta ranges from -0.4 to 0.4 generally in dataset
     for x in range(int(0.8 / eta_increment)):
-        print(x)
         eta_slices.append((x * eta_increment - 0.4, (x * eta_increment + eta_increment + eta_overlap - 0.4)))
 
     #eta_slices = [(-float("inf"), 0 ),(0,float("inf"))]
-    #eta_slices = [(-float("inf"),float("inf"))]
+    eta_slices = [(-float("inf"),float("inf"))]
 
     print(eta_slices)
 
 
-    phi_increment = 2.0
-    phi_overlap = 0.4
+    phi_increment = 0.5
+    phi_overlap = 0.1
     phi_slices = []
     for x in range(int(2/phi_increment)):
         phi_slices.append((x*phi_increment, x*phi_increment + phi_increment + phi_overlap))
@@ -210,6 +204,17 @@ class Hit(Xplet):
         # test: second order conflicts
         #self.inner_tplets: List[Triplet] = []
         #self.outer_tplets: List[Triplet] = []
+
+    #FIXME conflict resolution
+    def getHit_3d(self, h: int):
+            foundHit = None
+            for hits in self.hit_id:
+                if h == hits:
+                    if not foundHit:
+                        foundHit = h.coord_3d
+                    else:
+                        raise Exception("ERROR: Found two Doublets with same Hit ID.")
+                    return foundHit
 
     def __str__(self):
         return str(self.hit_id)  # to avoid recursion

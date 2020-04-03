@@ -28,7 +28,7 @@ logging.getLogger('hepqpr').setLevel(logging.DEBUG)
 # == DATASET CONFIG
 
 dsmaker_config = dict(
-    density=0.2,  # 1%
+    density=0.02,  # 1%
 )
 
 # == INPUT CONFIG
@@ -76,7 +76,6 @@ for x in range (1):
     #returns
     responseContainer = model.sample_qubo_slices(Q=sliceContainer)
     #response = model.sample_qubo(Q=qslice.getQubo(0,0))
-
 
     # get all output doublets
     all_doublets = model.process_sample_slices(responseContainer=responseContainer)
