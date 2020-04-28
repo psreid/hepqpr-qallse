@@ -12,6 +12,7 @@ from .other.stdout_redirect import capture_stdout
 from .data_structures import *
 from .data_wrapper import DataWrapper
 from .utils import tracks_to_xplets
+import traceback
 
 
 class ConfigBase(ABC):
@@ -173,7 +174,7 @@ class QallseBase(ABC):
                 self.logger.info(f'QUBO of size {len(qubo.qubo)} sampled in {exec_time:.2f}s (seed {seed}).')
                 responseSlice = ResponseSlice(r=response, eta=qubo.eta, phi=qubo.phi)
                 responsecontainer.addResponse(r=responseSlice)
-
+            traceback.extract_stack()
         return (responsecontainer, exec_time) if return_time else responsecontainer
 
     @classmethod
@@ -232,9 +233,7 @@ class QallseBase(ABC):
     def _create_doublets(self, initial_doublets):
         from collections import defaultdict
         # Generate Doublet structures from the initial doublets, calling _is_invalid_doublet to apply early cuts
-        #for eta in range(len(Volayer.eta_slices)):
-        #for phi in range(len(Volayer.phi_slices)):
-        #doublets = defaultdict(list)
+
         doublets = []
         #doublets = [[[] for i in range((len(Volayer.phi_slices)))]for j in range(len(Volayer.eta_slices))]
         for (start_id, end_id) in initial_doublets:
