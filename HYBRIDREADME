@@ -1,0 +1,12 @@
+instructions for using dwave hybrid.
+
+start with fresh python3 virtual environment
+
+You must ensure that you have Dwave API token from leap.
+
+pip install dwave-hybrid
+python3 /src/setup.py develop
+configure your dwave API....
+dwave --help
+
+in this order

@@ -8,11 +8,10 @@ from typing import Union
 import pandas as pd
 from dwave_qbsolv import QBSolv
 from .other.stdout_redirect import capture_stdout
-from memory_profiler import profile
 from .data_structures import *
 from .data_wrapper import DataWrapper
 from .utils import tracks_to_xplets
-
+from dwave.system import LeapHybridSampler
 
 class ConfigBase(ABC):
     """Encapsulate parameters for a model. The parameters can be defined as class attributes."""
@@ -120,6 +119,7 @@ class QallseBase(ABC):
         :return: a dimod response or a tuple (dimod response, exec_time)
          (see `dimod.Response <https://docs.ocean.dwavesys.com/projects/dimod/en/latest/reference/response.html>`_)
         """
+        sampler = LeapHybridSampler(time_limit=3)
         if Q is None: Q = self.to_qubo()
         if seed is None:
             import random
@@ -129,7 +129,7 @@ class QallseBase(ABC):
         start_time = time.process_time()
         try:
             with capture_stdout(logfile):
-                response = QBSolv().sample_qubo(Q, seed=seed, **qbsolv_params)
+                #response = QBSolv().sample_qubo(Q, seed=seed, **qbsolv_params)
                 response = sampler.sample_qubo(Q, seed=seed, **sample_kwargs)
 
         except: # fails if called from ipython notebook...
