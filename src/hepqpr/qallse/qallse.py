@@ -1,5 +1,4 @@
 import pandas as pd
-from memory_profiler import profile
 from .data_structures import *
 from .qallse_base import ConfigBase, QallseBase
 from .utils import pd_read_csv_array
