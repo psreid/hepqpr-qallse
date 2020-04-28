@@ -10,3 +10,9 @@ configure your dwave API....
 dwave --help
 
 in this order
+
+Usage and development.
+
+sampler changes all occur in "sample QUBO" in src/hepqr/qallse/qallse_base
+
+running scripts/6-TestLinearQUBO.py is just a basic script currently set at 1% of the current event size
