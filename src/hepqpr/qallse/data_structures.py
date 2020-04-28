@@ -105,7 +105,7 @@ class Volayer:
         if phi <= (cls.phi_slices[0][0] + cls.phi_overlap):
 
             phislices.append(cls.phi_slices[len(cls.phi_slices) - 1])
-        #print(phislices)
+
         phislice_indices = []
         # populate phislice_indices with each respective cls.phislice index
         for slice in phislices:
@@ -248,7 +248,7 @@ class Doublet(Xplet):
         self.coord_3d = hit_end.coord_3d - hit_start.coord_3d
 
 
-#: Container carrying all qubo slices
+#: Container carrying all Doubles
 class DoubletContainer(object):
     def __init__(self):
         self.DoubletList = []
@@ -280,7 +280,6 @@ class Triplet(Xplet):
         #: The slice in which the triplet belongs to
         self.phi_slice = d2.phi_slice
         self.eta_slice = d2.eta_slice
-        #print(self.eta_slice)
         #: TODO Identifiy differences between implied helix curvature and menger curvature for impact parameter performance
         #: Radius of curvature, see `Menger curvature <https://en.wikipedia.org/wiki/Menger_curvature>`_.
         self.curvature = curvature(*[h.coord_2d for h in self.hits])
