@@ -177,18 +177,20 @@ class TrackRecreaterD(TrackRecreater):
                 score = 0  # TODO: use another score that looks at the shape of the tracks
                 if c[0] in self._ends: score += len(self._ends[c[0]])
                 if c[1] in self._starts: score += len(self._starts[c[1]])
-                print(str(c))
+                #print(str(c))
                 sum_score += score
                 if score > best_score:
                     best_score, best_candidate = score, c
                     conflict_count = conflict_count + 1
                 if score == best_score:
-                    #FIXME conflict resolution
-                    print(hepqpr.qallse.Hit.getHit_3d(hepqpr.qallse.Hit, h=c[0]))
+                    dummy = 0
+                    #FIXME conflict resolution if length equal
+                    #print(hepqpr.qallse.Hit.getHit_3d(hepqpr.qallse.Hit, h=c[0]))
 
                     #c[0].eta_slice
             if sum_score == 0:  # all remaining conflicts are lonely doublets. Stop.
                 conflict_count = conflict_count - len(conflicts) / 2
+                print("conflict count from overlapping region")
                 print(conflict_count)
                 break
 
