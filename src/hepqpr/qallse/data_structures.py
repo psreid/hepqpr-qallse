@@ -26,13 +26,13 @@ class Volayer:
     eta_increment = 0.2
     eta_overlap = 0.02
     eta_slices = []
+    #FIXME most spaghetti part of code. RZ slicing increments not intuitive here
     #eta ranges from -0.4 to 0.4 generally in dataset
     for x in range(int(0.8 / eta_increment)):
         eta_slices.append((x * eta_increment - 0.4, (x * eta_increment + eta_increment + eta_overlap - 0.4)))
 
     #eta_slices = [(-float("inf"), 0 ),(0,float("inf"))]
     eta_slices = [(-float("inf"),float("inf"))]
-
     print(eta_slices)
 
 
@@ -53,9 +53,7 @@ class Volayer:
     @classmethod
     def get_eta_slice(cls, zval: float, xval: float, yval: float) -> list:
         #FIXME this is RZ plane
-        # broken eta = (-1)*(zval/np.abs(zval))*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/zval * 0.5)))
-        # eta = (-1) * (zval / np.abs(zval)) * np.log(np.tan((np.arctan(np.abs(np.sqrt(xval ** 2 + yval ** 2) / zval)) * 0.5)))
-        # print(eta)
+
         eta = np.arctan((np.sqrt(yval**2 + xval**2) / zval))*0.5/np.pi
         #print(eta)
         if np.sqrt(yval**2 + xval**2) < 40:
