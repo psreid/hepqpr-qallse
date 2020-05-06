@@ -12,11 +12,25 @@ To run this script:
 """
 import pickle
 import random
-
+#:FIXME experiemnetla
+import neal
+import dimod
+import dwave_networkx as dnx
+from tabu import TabuSampler
+import networkx as nx
+import dwave.embedding
+from dwave.system import DWaveSampler, EmbeddingComposite
 from hepqpr.qallse.cli.func import *
 import os.path as op
 
 # ==== RUN CONFIG TODO change it
+
+#: FIXME experimental pegasus setup
+P6 = dnx.pegasus_graph(6)
+classical_sampler = neal.SimulatedAnnealingSampler()
+#tabu_sampler = tabu.TabuSampler()
+sampler = dimod.StructureComposite(classical_sampler, P6.nodes, P6.edges)
+
 
 loglevel = logging.DEBUG
 

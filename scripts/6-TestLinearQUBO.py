@@ -7,12 +7,25 @@ import pandas as pd
 import numpy as np
 import tempfile
 import logging
+# :FIXME experimental
+import neal
+import dimod
+import dwave_networkx as dnx
+from tabu import TabuSampler
+import networkx as nx
+import dwave.embedding
+from dwave.system import DWaveSampler, EmbeddingComposite
+from hepqpr.qallse.cli.func import *
 from hepqpr.qallse.plotting import *
 from hepqpr.qallse import *
 from hepqpr.qallse.dsmaker import create_dataset
+
 #from memory_profiler import profile
 from typing import Tuple, List, Dict
 from enum import IntEnum
+
+from dwave_qbsolv import QBSolv
+
 
 
 # initialise the plotting module in "notebook" mode
@@ -28,7 +41,9 @@ logging.getLogger('hepqpr').setLevel(logging.DEBUG)
 # == DATASET CONFIG
 
 dsmaker_config = dict(
+
     density=0.02,  # 1%
+
 )
 
 # == INPUT CONFIG
@@ -38,14 +53,24 @@ add_missing = True
 
 # == RUN CONFIG
 
+
 model_class = QallseD0 # model class to use
 extra_config = dict() # configuration arguments overriding the defaults
 
 
+#: FIXME experimental pegasus setup
+P6 = dnx.pegasus_graph(-100, nice_coordinates=True)
+classical_sampler = neal.SimulatedAnnealingSampler()
+tabu_sampler = TabuSampler()
+#sampler = dimod.StructureComposite(classical_sampler, P6.nodes, P6.edges)
+sampler = dimod.StructureComposite(tabu_sampler, P6.nodes, P6.edges)
+
 
 tempdir = tempfile.TemporaryDirectory()
 print(f'using {tempdir.name}')
+
 metas, path = create_dataset(output_path=tempdir.name, random_seed=240834351 ,gen_doublets=True, **dsmaker_config)
+
 #path =  '/tmp/hpt-collapse/ds10/event000001000'
 
 with open(path + '-meta.json') as f:
@@ -64,6 +89,7 @@ else:
 
 # instantiate qallse
 for x in range (1):
+
     model = model_class(dw, **extra_config)
 
     # build the qubo
@@ -109,3 +135,5 @@ for x in range (1):
     '''qann.write("%d , %d " % (dw.compute_energy(Q),response.record.energy[0] ))
     qann.write(f'{p * 100}, {r * 100}, {len(missings)}, ')
     qann.write(f'{len(final_tracks)}, {trackml_score * 100}, \n')'''
+
+

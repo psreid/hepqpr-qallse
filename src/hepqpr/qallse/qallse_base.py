@@ -106,7 +106,7 @@ class QallseBase(ABC):
             f'quadruplets: {len(self.quadruplets)}')
 
         return self
-    def sample_qubo(self, Q: TQubo = None, return_time=False, logfile: str = None, seed: int=None, **qbsolv_params) -> Union[
+    def sample_qubo(self, Q: TQubo = None, return_time=False, logfile: str = None, seed: int=None, sampler=None , **qbsolv_params) -> Union[
         object, Tuple[object, float]]:
         """
         Submit a QUBO to (see `qbsolv <https://github.com/dwavesystems/qbsolv>`_).
@@ -129,8 +129,11 @@ class QallseBase(ABC):
         try:
             with capture_stdout(logfile):
                 response = QBSolv().sample_qubo(Q, seed=seed, **qbsolv_params)
+                response = sampler.sample_qubo(Q, seed=seed, **sample_kwargs)
+
         except: # fails if called from ipython notebook...
-            response = QBSolv().sample_qubo(Q, seed=seed, **qbsolv_params)
+            #response = QBSolv().sample_qubo(Q, seed=seed, **qbsolv_params)
+            response = sampler.sample_qubo(Q, seed=seed, **qbsolv_params)
 
         exec_time = time.process_time() - start_time
 
@@ -420,5 +423,6 @@ class QallseBase(ABC):
         if return_stats:
             return sliceContainer, (n_vars, n_incl_couplers, n_excl_couplers)
         else:
+
             return sliceContainer
 
