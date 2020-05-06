@@ -8,7 +8,7 @@ a list of doublets that can potentially contain duplicates and/or conflicting do
 
 import logging
 from typing import List, Union, Tuple
-
+import hepqpr.qallse
 import numpy as np
 import pandas as pd
 
@@ -168,6 +168,8 @@ class TrackRecreaterD(TrackRecreater):
         while len(conflicts) > 0:
 
             best_candidate, best_score, sum_score = 0, 0, 0
+            conflict_count = 0
+            #temp_conflicts = conflicts.values if isinstance(hepqpr.qallse.doublets, pd.DataFrame) else: doublets
             for c in conflicts:
                 # compute the score based on the resulting track length if added.
                 # This has to be recomputed each time, since adding a doublet to the solution
@@ -175,11 +177,21 @@ class TrackRecreaterD(TrackRecreater):
                 score = 0  # TODO: use another score that looks at the shape of the tracks
                 if c[0] in self._ends: score += len(self._ends[c[0]])
                 if c[1] in self._starts: score += len(self._starts[c[1]])
+                #print(str(c))
                 sum_score += score
                 if score > best_score:
                     best_score, best_candidate = score, c
+                    conflict_count = conflict_count + 1
+                if score == best_score:
+                    dummy = 0
+                    #FIXME conflict resolution if length equal
+                    #print(hepqpr.qallse.Hit.getHit_3d(hepqpr.qallse.Hit, h=c[0]))
 
+                    #c[0].eta_slice
             if sum_score == 0:  # all remaining conflicts are lonely doublets. Stop.
+                conflict_count = conflict_count - len(conflicts) / 2
+                print("conflict count from overlapping region")
+                print(conflict_count)
                 break
 
             # add the best candidate to the solution
