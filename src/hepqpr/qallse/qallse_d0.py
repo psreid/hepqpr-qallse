@@ -5,11 +5,11 @@ from .utils import define_circle
 
 class D0Config(MpConfig):
     #: multiplier for the d0 part of the weight
-    d0_factor = 0.5
+    d0_factor = 0.4
     #: denominator in the d0 exponent: exp(d0/d0_denom)
     d0_denom = 1.0
     #: multiplier for the z0 part of the weight
-    z0_factor = 0.2
+    z0_factor = 0.4
     #: denominator in the z0 exponent: exp(z0/z0_denom)
     z0_denom = 0.5
 
@@ -43,7 +43,6 @@ class QallseD0(QallseMp):
                   self.config.z0_factor * (1.0 - np.exp(-abs(tplet.z0) / self.config.z0_denom))
 
         return tplet.w
-
     def _compute_impact_params_for(self, tplet: Triplet) -> (float, float):
         #: compute d0 and z0 for a given triplet.
 

@@ -115,6 +115,11 @@ class DataWrapper:
         :param doublets: a set of doublets
         :return: the precision, the recall and the list of missing doublets. p and r are between 0 and 1.
         """
+        #unique_doublets = set()
+        #for d in doublets:
+
+        #    unique_doublets.add(d)
+        #doublets = list(d)
         if isinstance(doublets, pd.DataFrame): doublets = doublets.values
         doublets_found, _, unfocused_found = diff_rows(doublets, self._unfocused)
         missing, fakes, real = diff_rows(self._doublets, doublets_found)

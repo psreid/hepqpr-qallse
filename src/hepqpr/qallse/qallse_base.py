@@ -8,10 +8,11 @@ from typing import Union
 import pandas as pd
 from dwave_qbsolv import QBSolv
 from .other.stdout_redirect import capture_stdout
-from memory_profiler import profile
+#from memory_profiler import profile
 from .data_structures import *
 from .data_wrapper import DataWrapper
 from .utils import tracks_to_xplets
+import traceback
 
 
 class ConfigBase(ABC):
@@ -92,10 +93,8 @@ class QallseBase(ABC):
         #global initial_doublets
         initial_doublets = doublets.values if isinstance(doublets, pd.DataFrame) else doublets
 
-         #p = Pool()
         self._create_doublets(initial_doublets)
-        #self.doublets = multiprocess_doublets(initial_doublets)
-         #p.close()
+
         self._create_triplets()
         self._create_quadruplets()
 
@@ -107,7 +106,7 @@ class QallseBase(ABC):
             f'quadruplets: {len(self.quadruplets)}')
 
         return self
-    def sample_qubo(self, Q: TQubo = None, return_time=False, logfile: str = None, seed: int=None, **qbsolv_params) -> Union[
+    def sample_qubo(self, Q: TQubo = None, return_time=False, logfile: str = None, seed: int=None, sampler=None , **qbsolv_params) -> Union[
         object, Tuple[object, float]]:
         """
         Submit a QUBO to (see `qbsolv <https://github.com/dwavesystems/qbsolv>`_).
@@ -130,14 +129,56 @@ class QallseBase(ABC):
         try:
             with capture_stdout(logfile):
                 response = QBSolv().sample_qubo(Q, seed=seed, **qbsolv_params)
+                response = sampler.sample_qubo(Q, seed=seed, **sample_kwargs)
+
         except: # fails if called from ipython notebook...
-            response = QBSolv().sample_qubo(Q, seed=seed, **qbsolv_params)
+            #response = QBSolv().sample_qubo(Q, seed=seed, **qbsolv_params)
+            response = sampler.sample_qubo(Q, seed=seed, **qbsolv_params)
 
         exec_time = time.process_time() - start_time
 
         self.logger.info(f'QUBO of size {len(Q)} sampled in {exec_time:.2f}s (seed {seed}).')
 
         return (response, exec_time) if return_time else response
+
+    #@profile
+    def sample_qubo_slices(self, Q: TQubo = None, return_time=False, logfile: str = None, seed: int=None, **qbsolv_params)\
+    -> ResponseContainer:
+            #-> Union[object, Tuple[object, float]]:
+        """
+        Submit a QUBO to (see `qbsolv <https://github.com/dwavesystems/qbsolv>`_).
+
+        :param Q: the QUBO's in the from of a QuboSlice container. If not defined, :py:meth:~`to_qubo` will be called.
+        :param return_time: if set, also return the execution time (in seconds)
+        :param qbsolv_params: parameters to pass to qbsolv's `sample_qubo` method
+        :param logfile: path to a file. if set, all qbsolv output will be redirected to this file
+        :param seed: the random seed for qbsolv. **MUST** be a 32-bits integer with entropy !
+        :return: a dimod response or a tuple (dimod response, exec_time)
+         (see `dimod.Response <https://docs.ocean.dwavesys.com/projects/dimod/en/latest/reference/response.html>`_)
+        """
+        if Q is None: Q = self.to_qubo()
+        if seed is None:
+            import random
+            seed = random.randint(0, 1<<31)
+        # Instantiate a container to hold all qubo responses
+        responsecontainer = ResponseContainer()
+        # run qbsolv
+        start_time = time.process_time()
+        for qubo in Q.quboList:
+            if bool(qubo.qubo):
+                try:
+                    with capture_stdout(logfile):
+                        ##make dummy QBSOLV
+                        response = QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params)
+                except: # fails if called from ipython notebook...
+                    response = QBSolv().sample_qubo(qubo.qubo, seed=seed, **qbsolv_params)
+            exec_time = time.process_time() - start_time
+            if bool(qubo.qubo):
+                self.logger.info(f'QUBO of size {len(qubo.qubo)} sampled in {exec_time:.2f}s (seed {seed}).')
+                responseSlice = ResponseSlice(r=response, eta=qubo.eta, phi=qubo.phi)
+                responsecontainer.addResponse(r=responseSlice)
+            traceback.extract_stack()
+        return (responsecontainer, exec_time) if return_time else responsecontainer
 
     @classmethod
     def process_sample(self, sample: TDimodSample) -> List[TXplet]:
@@ -149,6 +190,30 @@ class QallseBase(ABC):
         :return: the list of final doublets
         """
         final_triplets = [Triplet.name_to_hit_ids(k) for k, v in sample.items() if v == 1]
+        final_doublets = tracks_to_xplets(final_triplets)
+        return np.unique(final_doublets, axis=0).tolist()
+
+    @classmethod
+    def process_sample_slices(self, responseContainer=None) -> List[TXplet]:
+        """
+        Convert a sliced QUBO solution into a set of doublets.
+        The sample needs to behave like a dictionary, but can also be an instance of dimod.SampleView.
+
+        :param sample: the QUBO response to process
+        :return: the list of final doublets
+
+        """
+        final_triplets = []
+
+        for respond in responseContainer.responseList:
+            #get iterator from Reponse object (=respond.respond)
+            #next() returns highest energy solution of all samples stored in Response
+
+            #Figure out what data type this is, and append
+            #final_triplets = Union[final_triplets, (set([Triplet.name_to_hit_ids(k) for k, v in next(respond.respond.samples()).items() if v == 1]))]
+
+            final_triplets = final_triplets + [Triplet.name_to_hit_ids(k) for k, v in next(respond.respond.samples()).items() if v == 1]
+
         final_doublets = tracks_to_xplets(final_triplets)
         return np.unique(final_doublets, axis=0).tolist()
 
@@ -167,17 +232,31 @@ class QallseBase(ABC):
         cls.doublets = doublets
 
     # ---------------------------------------------
-
+    #@profile
     def _create_doublets(self, initial_doublets):
+        from collections import defaultdict
         # Generate Doublet structures from the initial doublets, calling _is_invalid_doublet to apply early cuts
+
         doublets = []
+        #doublets = [[[] for i in range((len(Volayer.phi_slices)))]for j in range(len(Volayer.eta_slices))]
         for (start_id, end_id) in initial_doublets:
-           # start, end = self.hits[start_id], self.hits[end_id]
+            #FIXME should be appending as well to doublets eta phi container
             d = Doublet(self.hits[start_id], self.hits[end_id])
             if not self._is_invalid_doublet(d):
                 self.hits[start_id].outer.append(d)
                 self.hits[end_id].inner.append(d)
                 doublets.append(d)
+                '''
+                doublets[d.eta_slice[0], d.phi_slice[0]].append(d)
+                if len(d.eta_slice) == 2 and len(d.phi_slice) == 2:
+                    doublets[d.eta_slice[1], d.phi_slice[1]].append(d)
+                elif len(d.eta_slice) == 2 and len(d.phi_slice) == 1:
+                    doublets[d.eta_slice[1], d.phi_slice[0]].append(d)
+                elif len(d.eta_slice) == 1 and len(d.phi_slice) == 2:
+                    doublets[d.eta_slice[0], d.phi_slice[1]].append(d)
+                #doublets.append(d)
+                '''
+
 
         self.logger.info(f'created {len(doublets)} doublets.')
         self.doublets = doublets
@@ -188,10 +267,16 @@ class QallseBase(ABC):
     def _is_invalid_doublet(self, dblet: Doublet) -> bool:
         # [ABSTRACT] Apply early cuts on doublets, return True if the doublet should be discarded.
         pass
+
+    #@profile
     def _create_triplets(self):
         # Generate Triplet structures from Doublets, calling _is_invalid_triplet to apply early cuts
         triplets = []
+        #for eta in range((len(Volayer.eta_slices))):
+            #for phi in range((len(Volayer.phi_slices))):
+                 #for d1 in self.doublets[eta, phi]:
         for d1 in self.doublets:
+
             for d2 in d1.h2.outer:
                 t = Triplet(d1, d2)
                 if not self._is_invalid_triplet(t):
@@ -268,66 +353,76 @@ class QallseBase(ABC):
         pass
 
     # ---------------------------------------------
-    def to_qubo(self, return_stats=False) -> Union[TQubo, Tuple[TQubo, Tuple[int, int, int]]]:
+    #@profile
+    def to_qubo(self, return_stats=False) -> SliceContainer:
+        #Union[TQubo, Tuple[TQubo, Tuple[int, int, int]]]:
         """
         Generate the QUBO. Attention: ensure that :py:meth:~`build_model` has been called previously.
-        :param return_stats: if set, also return the number of variables and coulpers.
+        :param return_stats: if set, also return the number of variables and couplers.
         :return: either the QUBO, or a tuple (QUBO, (n_vars, n_incl_couplers, n_excl_couplers))
         """
+        
+        #FIXME investigate TQUBO object
+        #Q = [[{} for i in range(len(Volayer.phi_slices))] for j in range(len(Volayer.eta_slices))]
+        
+        #container class for slices
+        sliceContainer = SliceContainer()
 
-        Q = {}
         hits, doublets, triplets = self.qubo_hits, self.qubo_doublets, self.qubo_triplets
+
         quadruplets = self.quadruplets
-
         start_time = time.process_time()
-        # 1: qbits with their weight (doublets with a common weight)
-        for q in triplets:
-            q.weight = self._compute_weight(q)
-            Q[(str(q), str(q))] = q.weight
-        n_vars = len(Q)
+        #FIXME start here
+        for eta in range(len(Volayer.eta_slices)):
+            for phi in range(len(Volayer.phi_slices)):
+                # eta and phi need to be in list structure to use overlapping logic in set unions
+                eta_list = []
+                eta_list.append(eta)
+                phi_list = []
+                phi_list.append(phi)
 
-        # 2a: exclusion couplers (no two triplets can share the same doublet)
-        for hit_id, hit in hits.items():
-            for conflicts in [hit.inner_kept, hit.outer_kept]:
-                for (d1, d2) in itertools.combinations(conflicts, 2):
-                    for t1 in d1.inner_kept | d1.outer_kept:
-                        for t2 in d2.inner_kept | d2.outer_kept:
-                            if t1 == t2:
-                                self.logger.warning(f'tplet_1 == tplet_2 == {t1}')
-                                continue
-                            key = (str(t1), str(t2))
-                            if key not in Q and tuple(reversed(key)) not in Q:
-                                Q[key] = self._compute_conflict_strength(t1, t2)
+                Q = {}
+                # 1: qbits with their weight (doublets with a common weight)
+                for q in triplets:
+                    if set(q.eta_slice).union(eta_list) == set(q.eta_slice) and set(q.phi_slice).union(phi_list) == set(q.phi_slice):
+                        q.weight = self._compute_weight(q)
+                        Q[(str(q), str(q))] = q.weight
+                    n_vars = len(Q)
 
-        n_excl_couplers = len(Q) - n_vars
-        # 2b: inclusion couplers (consecutive doublets with a good triplet)
-        for q in quadruplets:
-            key = (str(q.t1), str(q.t2))
-            Q[key] = q.strength
+                # 2a: exclusion couplers (no two triplets can share the same doublet)
+                for hit_id, hit in hits.items():
+                    for conflicts in [hit.inner_kept, hit.outer_kept]:
+                        for (d1, d2) in itertools.combinations(conflicts, 2):
+                            for t1 in d1.inner_kept | d1.outer_kept:
+                                for t2 in d2.inner_kept | d2.outer_kept:
+                                    if t1 == t2:
+                                        self.logger.warning(f'tplet_1 == tplet_2 == {t1}')
+                                        continue
+                                    key = (str(t1), str(t2))
+                                    if key not in Q and tuple(reversed(key)) not in Q:
+                                        if set(t1.eta_slice).union(eta_list) == set(t1.eta_slice) and set(t1.phi_slice).union(phi_list) == set(t1.phi_slice):
+                                            Q[key] = self._compute_conflict_strength(t1, t2)
 
-        n_incl_couplers = len(Q) - (n_vars + n_excl_couplers)
-        exec_time = time.process_time() - start_time
+                n_excl_couplers = len(Q) - n_vars
+                # 2b: inclusion couplers (consecutive doublets with a good triplet)
+                for q in quadruplets:
+                    if set(q.eta_slice).union(eta_list) == set(q.eta_slice) and set(q.phi_slice).union(phi_list) == set(q.phi_slice):
+                        key = (str(q.t1), str(q.t2))
+                        Q[key] = q.strength
 
-        self.logger.info(f'Qubo generated in {exec_time:.2f}s. Size: {len(Q)}. Vars: {n_vars}, '
-                         f'excl. couplers: {n_excl_couplers}, incl. couplers: {n_incl_couplers}')
+                qSlice = QuboSlice(Q, eta, phi)
+                sliceContainer.addQubo(q=qSlice)
+                
+                n_incl_couplers = len(Q) - (n_vars + n_excl_couplers)
+                exec_time = time.process_time() - start_time
+
+
+                self.logger.info(f'Qubo generated in {exec_time:.2f}s. Size: {len(Q)}. Vars: {n_vars}, '
+                                 f'excl. couplers: {n_excl_couplers}, incl. couplers: {n_incl_couplers}')
+
         if return_stats:
-            return Q, (n_vars, n_incl_couplers, n_excl_couplers)
+            return sliceContainer, (n_vars, n_incl_couplers, n_excl_couplers)
         else:
-            return Q
 
+            return sliceContainer
 
-
-# Pickup later. Note that working outside the class is a nightmare
-"""def multiprocess_doublets(QallseBase,initial_doublets):
-    from hepqpr.qallse.qallse_base import QallseBase
-    #from QallseBase import initial_doublets
-    #from .qallse_base import initial_doublets
-    doublets = []
-    for (start_id, end_id) in initial_doublets:
-        start, end = QallseBase.hits[start_id], QallseBase.hits[end_id]
-        d = Doublet(start, end)
-        if not QallseBase._is_invalid_doublet(d):
-             start.outer.append(d)
-             end.inner.append(d)
-             doublets.append(d)
-    QallseBase.doublets = doublets"""

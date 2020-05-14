@@ -1,0 +1,8 @@
+Current state of Slices:
+
+Slicing is under the r-z plane x-y plabe. generally x-y plane is easier to debug.
+
+installation is just python3 setup develop
+
+
+Conflicts of doublets from overlaapping regions is WIP
