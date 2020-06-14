@@ -19,7 +19,9 @@ class Volayer:
     """
 
     #: Define the mapping of `volume_id` and `layer_id` into one number (the index in the list)
-    ordering = [(8, 2), (8, 4), (8, 6), (8, 8), (13, 2), (13, 4), (13, 6), (13, 8), (17, 2), (17, 4)]
+    #ATLAS
+    #ordering = [(8, 2), (8, 4), (8, 6), (8, 8), (13, 2), (13, 4), (13, 6), (13, 8), (17, 2), (17, 4)]
+    ordering = [(8, 1), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8), (8, 9)]
 
     @classmethod
     def get_index(cls, volayer: Tuple[int, int]) -> int:
@@ -119,8 +121,12 @@ class Doublet(Xplet):
         """
         Create a doublet.
         """
-        assert hit_start != hit_end
-        assert hit_start.r <= hit_end.r
+
+        #FIXME:
+        #FIXME:
+        #FIXME: FOR THE LOVE OF GOD MAKE SURE THESE ASSERTIONS WORK IN LATER VERSIONS
+        #assert hit_start != hit_end
+        #assert hit_start.r <= hit_end.r
 
         super().__init__([hit_start, hit_end], Triplet)
         #: The hits composing this doublet

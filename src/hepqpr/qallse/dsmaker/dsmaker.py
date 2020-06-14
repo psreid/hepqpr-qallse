@@ -50,7 +50,8 @@ import numpy as np
 import pandas as pd
 
 BARREL_VOLUME_IDS = [8, 13, 17]
-
+#ATLAS
+BARREL_VOLUME_IDS = [8.00, 13, 17]
 import logging
 
 logger = logging.getLogger(__name__)
@@ -106,14 +107,15 @@ def create_dataset(
 
     # create a merged dataset with hits and truth
     df = hits.join(truth, rsuffix='_', how='inner')
-
+    print(df.head())
     logger.debug(f'Loaded {len(df)} hits from {input_path}.')
 
     # ---------- filter hits
 
     # keep only hits in the barrel region
-    df = df[hits.volume_id.isin(BARREL_VOLUME_IDS)]
-    logger.debug(f'Filtered hits from barrel. Remaining hits: {len(df)}.')
+    #ATLAS_READ already does this
+    #df = df[hits.volume_id.isin(BARREL_VOLUME_IDS)]
+    #logger.debug(f'Filtered hits from barrel. Remaining hits: {len(df)}.')
 
     if phi_bounds is not None:
         df['phi'] = np.arctan2(df.y, df.x)
@@ -126,12 +128,16 @@ def create_dataset(
     df = df[df.particle_id != 0]
 
     if not double_hits_ok:
-        df.drop_duplicates(['particle_id', 'volume_id', 'layer_id'], keep='first', inplace=True)
+        ## ATLAS
+        df.to_csv('/Users/parkerreid/hepqpr-qallse/src/hepqpr/qallse/pls.csv')
+        df.drop_duplicates(['particle_id', 'layer_id'], keep='first', inplace=True)
+        #df.drop_duplicates(['particle_id', 'volume_id', 'layer_id'], keep='first', inplace=True)
         logger.debug(f'Dropped double hits. Remaining hits: {len(df) + len(noise_df)}.')
 
     # ---------- sample tracks
 
     num_tracks = int(df.particle_id.nunique() * density)
+    print(num_tracks)
     sampled_particle_ids = random.sample(df.particle_id.unique().tolist(), num_tracks)
     df = df[df.particle_id.isin(sampled_particle_ids)]
 
@@ -169,9 +175,9 @@ def create_dataset(
     os.makedirs(output_path, exist_ok=True)
     output_path = os.path.join(output_path, event_id)
 
-    new_hits.to_csv(output_path + '-hits.csv', index=False)
-    new_truth.to_csv(output_path + '-truth.csv', index=False)
-    new_particles.to_csv(output_path + '-particles.csv', index=False)
+    new_hits.to_csv(output_path + '-hits.csv', index=False, float_format='%17.2f')
+    new_truth.to_csv(output_path + '-truth.csv', index=False, float_format='%17.2f')
+    new_particles.to_csv(output_path + '-particles.csv', index=False, float_format='%17.2f')
 
     # ---------- write metadata
 
@@ -198,7 +204,7 @@ def create_dataset(
         from hepqpr.qallse.seeding import generate_doublets
         doublets_df = generate_doublets(hits=new_hits)
         with open(output_path + '-doublets.csv', 'w') as f:
-            doublets_df.to_csv(f, index=False)
+            doublets_df.to_csv(f, index=False, float_format='%17.2f')
             logger.info(f'Doublets (len={len(doublets_df)}) generated in f{output_path}.')
 
     return metadata, output_path
