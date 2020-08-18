@@ -21,12 +21,93 @@ class Volayer:
     #: Define the mapping of `volume_id` and `layer_id` into one number (the index in the list)
     #ATLAS
     #ordering = [(8, 2), (8, 4), (8, 6), (8, 8), (13, 2), (13, 4), (13, 6), (13, 8), (17, 2), (17, 4)]
-    ordering = [(8, 1), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8), (8, 9)]
+    ordering = [(8,0), (8, 1), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8), (8, 9)]
+
+    #: Define slices in eta and phi
+
+    eta_increment = 0.2
+    eta_overlap = 0.02
+    eta_slices = []
+    # FIXME most spaghetti part of code. RZ slicing increments not intuitive here
+    # eta ranges from -0.4 to 0.4 generally in dataset
+    for x in range(int(0.8 / eta_increment)):
+        eta_slices.append((x * eta_increment - 0.4, (x * eta_increment + eta_increment + eta_overlap - 0.4)))
+
+    # eta_slices = [(-float("inf"), 0 ),(0,float("inf"))]
+    #eta_slices = [(-float("inf"), float("inf"))]
+    print(eta_slices)
+
+    phi_increment = 0.5
+    phi_overlap = 0.1
+    phi_slices = []
+    for x in range(int(2 / phi_increment)):
+        phi_slices.append((x * phi_increment, x * phi_increment + phi_increment + phi_overlap))
+        print(phi_slices)
+
+    # phi_slices = [(0, 0.5), (0.0, 1.0), (1, 1.5), (1.5, 2)]
 
     @classmethod
     def get_index(cls, volayer: Tuple[int, int]) -> int:
         """Convert a couple `volume_id`, `layer_id` into a number (see :py:attr:`~ordering`)."""
         return cls.ordering.index(tuple(volayer))
+
+    @classmethod
+    def get_RZ_slice(cls, zval: float, xval: float, yval: float) -> list:
+        # FIXME this is RZ plane
+
+        eta = np.arctan((np.sqrt(yval ** 2 + xval ** 2) / zval)) * 0.5 / np.pi
+        # print(eta)
+        #if np.sqrt(yval ** 2 + xval ** 2) < 40:
+        #    etaslices = cls.eta_slices
+
+        # Determine the eta slice the hit belongs to
+        #else:
+        etaslices = list(filter(lambda sl: eta > sl[0] and eta <= sl[1], cls.eta_slices))
+
+        etaslice_indices = []
+        # populate etaslice indices with cls.etaslices
+        for slice in etaslices:
+            etaslice_indices.append(cls.eta_slices.index(slice))
+        """Get eta-slice index for hit (see :py:attr:`~slices`)."""
+        return etaslice_indices
+
+    '''
+    def get_eta_slice(cls, zval: float,  xval: float, yval: float) -> list:
+        # broken eta = (-1)*(zval/np.abs(zval))*np.log(np.abs(np.tan(np.sqrt(xval**2+yval**2)/zval * 0.5)))
+        #eta = (-1) * (zval / np.abs(zval)) * np.log(np.tan((np.arctan(np.abs(np.sqrt(xval ** 2 + yval ** 2) / zval)) * 0.5)))
+        #print(eta)
+        eta = (-1) * (zval / np.abs(zval)) * np.log(np.tan((np.arctan(np.abs(yval/zval)) * 0.5)))
+        if np.abs(zval) < 30:
+            etaslices = cls.eta_slices
+        # Determine the eta slice the hit belongs to
+        else:
+            etaslices = list(filter(lambda sl: eta>sl[0] and eta<=sl[1], cls.eta_slices))
+        etaslice_indices = []
+        #populate etaslice indices with cls.etaslices
+        for slice in etaslices:
+            etaslice_indices.append(cls.eta_slices.index(slice))
+        """Get eta-slice index for hit (see :py:attr:`~slices`)."""
+        return etaslice_indices
+    '''
+
+    @classmethod
+    def get_phi_slice(cls, xval: float, yval: float) -> list:
+        """Get phi-slice index for hit (see :py:attr:`~slices`)."""
+        phi = np.arctan2(yval, xval) / np.pi + 1
+        # phi = np.arctan(yval/xval)/np.pi
+        # Determine which phi slice the hit belongs to
+        phislices = list(filter(lambda sl: phi > sl[0] and phi <= sl[1], cls.phi_slices))
+
+        # if phi belongs to the first phi slice and is within the last phi slice overlap region
+        if phi <= (cls.phi_slices[0][0] + cls.phi_overlap):
+            phislices.append(cls.phi_slices[len(cls.phi_slices) - 1])
+
+        phislice_indices = []
+        # populate phislice_indices with each respective cls.phislice index
+        for slice in phislices:
+            phislice_indices.append(cls.phi_slices.index(slice))
+
+        return phislice_indices
 
     @classmethod
     def difference(cls, volayer1, volayer2) -> int:
