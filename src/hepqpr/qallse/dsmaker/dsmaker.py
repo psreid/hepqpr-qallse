@@ -44,7 +44,7 @@ import random
 import re
 from datetime import datetime
 from typing import Dict, Tuple
-
+from hepqpr.qallse.data_structures import *
 import click
 import numpy as np
 import pandas as pd
@@ -107,7 +107,34 @@ def create_dataset(
 
     # create a merged dataset with hits and truth
     df = hits.join(truth, rsuffix='_', how='inner')
-    print(df.head())
+    ##FIXME:
+    ## right here, we must join multiple hits of the same truth particle, that are within an accepted range.
+    ## The purpose will be to get a proper truth reconstruction
+    particle_redundancies = []
+    for index, row in df.iterrows():
+        for index1, row1 in df.iterrows():
+            if row["particle_id"] == row1["particle_id"]:
+                if Volayer.get_RZ_slice(row["z"], row["x"], row["y"])\
+                == Volayer.get_RZ_slice(row1["z"], row1["x"], row1["y"]):
+                    print(str(Volayer.get_RZ_slice(row["z"], row["x"], row["y"])[0]))
+                    print(str(Volayer.get_RZ_slice(row["z"], row["x"], row["y"])))
+                    print(str(row["particle_id"]) + str((Volayer.get_RZ_slice(row["z"], row["x"], row["y"])[0])))
+                    tmp = str(row["particle_id"]) + str((Volayer.get_RZ_slice(row["z"], row["x"], row["y"])[0]))
+                    #row["particle_id"] = str(row["particle_id"]) + str(Volayer.get_RZ_slice(row["z"], row["x"], row["y"]))
+                    df.loc[index, "particle_id"] = tmp
+                    #print(df.loc[index, row["particle_id"]])
+                    #df.set_value(index, row['particle_id'], tmp)
+                    print(row["particle_id"])
+                    print(tmp)
+                #r - z most well behaved here, append r-z index to particle ID
+                if row["layer_id"] == row1["layer_id"]:
+                    if row["z"] - row1["z"] < 15:
+                        continue
+                    continue
+
+
+                # if r-z and x,y,z proximity criteria met, combine hits into one
+                continue
     logger.debug(f'Loaded {len(df)} hits from {input_path}.')
 
     # ---------- filter hits
@@ -130,7 +157,7 @@ def create_dataset(
     if not double_hits_ok:
         ## ATLAS
         df.to_csv('/Users/parkerreid/hepqpr-qallse/src/hepqpr/qallse/pls.csv')
-        df.drop_duplicates(['particle_id', 'layer_id'], keep='first', inplace=True)
+        #df.drop_duplicates(['particle_id', 'layer_id'], keep='last', inplace=True)
         #df.drop_duplicates(['particle_id', 'volume_id', 'layer_id'], keep='first', inplace=True)
         logger.debug(f'Dropped double hits. Remaining hits: {len(df) + len(noise_df)}.')
 
