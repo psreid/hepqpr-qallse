@@ -13,11 +13,13 @@ class Config(ConfigBase):
     #: Doublets can miss at most (max_layer_span - 1) layers.
     #: Note that triplets and quadruplets also have this limitation, i.e.
     #: any xplet will at most miss (max_layer_span - 1) layers
-    max_layer_span = 2
+    max_layer_span = 5
+    #ATLAS 2 -> 3
 
     #: Maximum radius of curvature for a triplet. The curvature is computed using
     #: the *Mengel curvature*.
-    tplet_max_curv = 5E-3
+    #tplet_max_curv = 5E-3
+    tplet_max_curv = 1E-2
     #: Maximum (absolute) difference between the angles in the R-Z plane of the two doublets forming
     #: the triplet. The angles are defined as arctan(dz/dr).
     tplet_max_drz = 0.2
@@ -52,9 +54,11 @@ class Config(ConfigBase):
     strength_bounds = None
 
 class Config1GeV(Config):
-    tplet_max_curv = 8E-4  # (vs 5E-3)
-    tplet_max_drz = 0.1  # (vs0.2)
-    qplet_max_dcurv = 1E-4  # (vs4E-4)
+    #tplet_max_curv = 8E-4  # (vs 5E-3)
+    tplet_max_curv = 8E-3
+    tplet_max_drz = 0.8  # (vs0.2)
+    #qplet_max_dcurv = 1E-4  # (vs4E-4)
+    qplet_max_dcurv = 1E-3
 
 
 class Qallse(QallseBase):
@@ -115,18 +119,24 @@ class Qallse(QallseBase):
         # layer skips
         volayer_skip = tplet.hits[-1].volayer - tplet.hits[0].volayer
         if volayer_skip > self.config.max_layer_span + 1:
+            print(tplet)
+            print("layer fail")
             if is_real:
                 self.hard_cuts_stats.append(f'tplet,{tplet},volayer,{volayer_skip},')
                 return not self.config.cheat
             return True
         # radius of curvature formed by the three hits
         if abs(tplet.curvature) > self.config.tplet_max_curv:
+            print(tplet)
+            print("curve fail")
             if is_real:
                 self.hard_cuts_stats.append(f'tplet,{tplet},curv,{tplet.curvature},')
                 return not self.config.cheat
             return True
         # angle between the two doublets in the rz plane
         if tplet.drz > self.config.tplet_max_drz:
+            print(tplet)
+            print("rz fail")
             if is_real:
                 self.hard_cuts_stats.append(f'tplet,{tplet},drz,{tplet.drz},')
                 return not self.config.cheat
