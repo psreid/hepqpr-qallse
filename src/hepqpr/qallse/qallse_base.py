@@ -91,12 +91,16 @@ class QallseBase(ABC):
         self.hard_cuts_stats = self.hard_cuts_stats[:1]
         #global initial_doublets
         initial_doublets = doublets.values if isinstance(doublets, pd.DataFrame) else doublets
-
+        print(initial_doublets)
+        print("initial doublets")
          #p = Pool()
         self._create_doublets(initial_doublets)
+        print(self.doublets)
+        #self.doublets = set(self.doublets)
         #self.doublets = multiprocess_doublets(initial_doublets)
          #p.close()
         self._create_triplets()
+        print(self.triplets)
         self._create_quadruplets()
 
         end_time = time.process_time() - start_time
@@ -128,13 +132,13 @@ class QallseBase(ABC):
         # run qbsolv
         start_time = time.process_time()
         try:
-            with capture_stdout(logfile):
+            #with capture_stdout(logfile):
                 response = QBSolv().sample_qubo(Q, seed=seed, **qbsolv_params)
                 response = sampler.sample_qubo(Q, seed=seed, **sample_kwargs)
 
         except: # fails if called from ipython notebook...
-            #response = QBSolv().sample_qubo(Q, seed=seed, **qbsolv_params)
-            response = sampler.sample_qubo(Q, seed=seed, **qbsolv_params)
+            response = QBSolv().sample_qubo(Q, seed=seed, **qbsolv_params)
+            #response = sampler.sample_qubo(Q, seed=seed, **qbsolv_params)
 
         exec_time = time.process_time() - start_time
 
@@ -177,6 +181,7 @@ class QallseBase(ABC):
         for (start_id, end_id) in initial_doublets:
            # start, end = self.hits[start_id], self.hits[end_id]
             d = Doublet(self.hits[start_id], self.hits[end_id])
+            print("good")
             if not self._is_invalid_doublet(d):
                 self.hits[start_id].outer.append(d)
                 self.hits[end_id].inner.append(d)
@@ -197,6 +202,8 @@ class QallseBase(ABC):
         for d1 in self.doublets:
             for d2 in d1.h2.outer:
                 t = Triplet(d1, d2)
+                if self._is_invalid_triplet(t):
+                    print(t)
                 if not self._is_invalid_triplet(t):
                     d1.outer.append(t)
                     d2.inner.append(t)
@@ -241,11 +248,12 @@ class QallseBase(ABC):
         # when constructing the QUBO.
         for d in qplet.doublets():
             d.h1.outer_kept.add(d)
+            print("register")
             d.h2.inner_kept.add(d)
         for t in [qplet.t1, qplet.t2]:
             t.d1.outer_kept.add(t)
             t.d2.inner_kept.add(t)
-
+        print(d.h1.outer_kept)
         self.qubo_doublets.update(qplet.doublets())
         self.qubo_hits.update(zip(qplet.hit_ids(), qplet.hits))
         self.qubo_triplets.update([qplet.t1, qplet.t2])
@@ -289,6 +297,7 @@ class QallseBase(ABC):
             Q[(str(q), str(q))] = q.weight
         n_vars = len(Q)
 
+        ##FIXME FIXME PLS. there are no triplets. all are in conflict
         # 2a: exclusion couplers (no two triplets can share the same doublet)
         for hit_id, hit in hits.items():
             for conflicts in [hit.inner_kept, hit.outer_kept]:
@@ -298,16 +307,23 @@ class QallseBase(ABC):
                             if t1 == t2:
                                 self.logger.warning(f'tplet_1 == tplet_2 == {t1}')
                                 continue
+                            print(t1)
                             key = (str(t1), str(t2))
+
+                            print(key)
                             if key not in Q and tuple(reversed(key)) not in Q:
                                 Q[key] = self._compute_conflict_strength(t1, t2)
+
+
+
 
         n_excl_couplers = len(Q) - n_vars
         # 2b: inclusion couplers (consecutive doublets with a good triplet)
         for q in quadruplets:
             key = (str(q.t1), str(q.t2))
+            print("this happens")
             Q[key] = q.strength
-
+        print(Q)
         n_incl_couplers = len(Q) - (n_vars + n_excl_couplers)
         exec_time = time.process_time() - start_time
 
