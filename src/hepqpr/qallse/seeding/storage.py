@@ -85,6 +85,7 @@ class SpacepointStorage:
 
         # define the position of a given detector layer
         layNoToIdx = {2: 0, 4: 1, 6: 2, 8: 3}
+        layNoToIdx = {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10}
         volToOffset = {8: 0, 13: 4, 17: 8}
         crtIdx = 0
         for (sliceid, volid, layid), df in spacepoints.groupby(['bin_phi', 'volume_id', 'layer_id'], sort=False):
