@@ -68,6 +68,7 @@ class QallseMp(Qallse):
             if qplet.max_path >= self.config.min_qplet_path:
                 # keep qplet and register the structures it is made of
                 filtered_qplets.append(qplet)
+                print(str(qplet) + "qplet")
                 self._register_qubo_quadruplet(qplet)
             elif self.dataw.is_real_xplet(qplet.hit_ids()) == XpletType.REAL:
                 # we are dropping a real qplet here, log it !
