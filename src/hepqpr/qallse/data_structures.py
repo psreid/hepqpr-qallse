@@ -25,8 +25,8 @@ class Volayer:
 
     #: Define slices in eta and phi
 
-    eta_increment = 0.2
-    eta_overlap = 0.02
+    eta_increment = 0.1
+    eta_overlap = 0.002
     eta_slices = []
     # FIXME most spaghetti part of code. RZ slicing increments not intuitive here
     # eta ranges from -0.4 to 0.4 generally in dataset
@@ -37,8 +37,8 @@ class Volayer:
     #eta_slices = [(-float("inf"), float("inf"))]
     print(eta_slices)
 
-    phi_increment = 0.5
-    phi_overlap = 0.1
+    phi_increment = 0.25
+    phi_overlap = 0.01
     phi_slices = []
     for x in range(int(2 / phi_increment)):
         phi_slices.append((x * phi_increment, x * phi_increment + phi_increment + phi_overlap))
@@ -206,8 +206,8 @@ class Doublet(Xplet):
         #FIXME:
         #FIXME:
         #FIXME: FOR THE LOVE OF GOD MAKE SURE THESE ASSERTIONS WORK IN LATER VERSIONS
-        #assert hit_start != hit_end
-        #assert hit_start.r <= hit_end.r
+        assert hit_start != hit_end
+        assert hit_start.r <= hit_end.r
 
         super().__init__([hit_start, hit_end], Triplet)
         #: The hits composing this doublet
