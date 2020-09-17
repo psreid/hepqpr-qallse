@@ -8,7 +8,7 @@ class SeedingConfig:
         self.nPhiSlices = 53
         self.zTolerance = 3.0
         self.maxEta = 2.7
-        self.maxDoubletLength = 300.0  # 200.0 # LL: longer, since we added a volume !
+        self.maxDoubletLength =300.0  # 200.0 # LL: longer, since we added a volume !
         self.minDoubletLength = 10.0
         self.maxOuterRadius = 550.0
         self.doPSS = False
@@ -26,5 +26,6 @@ class SeedingConfig:
 class HptSeedingConfig(SeedingConfig):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.zMinus, self.zPlus = -150, 150
+        #self.zMinus, self.zPlus = -150, 150
+        self.zMinus, self.zPlus = -1150, 1150
         self._compute_derived_attrs()
