@@ -110,22 +110,27 @@ def create_dataset(
     ##FIXME:
     ## right here, we must join multiple hits of the same truth particle, that are within an accepted range.
     ## The purpose will be to get a proper truth reconstruction
+    '''df1 = pd.DataFrame({"hit_id":[],"hit_id":[],"x":[],"y":[],"z":[],"truth":[],"volume_id":[],"layer_id":[],\
+                       "module_id":[],"hit_id_":[],"particle_id":[],"tx":[],"ty":[],"tz":[],\
+                        "tpx":[],"tpy":[],"tpz":[],"weight}":[]})'''
+    replacer_dict = {}
+    replace_truth_dict = {}
     particle_redundancies = []
+
+    # Append a slicing ID at the end of each particle_ID. required to differentiate the same particle
+    # origin vertex
+    ##FixMe appending could have systematic error in the future
     for index, row in df.iterrows():
         for index1, row1 in df.iterrows():
             if row["particle_id"] == row1["particle_id"]:
-                if Volayer.get_RZ_slice(row["z"], row["x"], row["y"])\
-                == Volayer.get_RZ_slice(row1["z"], row1["x"], row1["y"]):
-                    print(str(Volayer.get_RZ_slice(row["z"], row["x"], row["y"])[0]))
-                    print(str(Volayer.get_RZ_slice(row["z"], row["x"], row["y"])))
-                    print(str(row["particle_id"]) + str((Volayer.get_RZ_slice(row["z"], row["x"], row["y"])[0])))
-                    tmp = str(row["particle_id"]) + str((Volayer.get_RZ_slice(row["z"], row["x"], row["y"])[0]))
-                    #row["particle_id"] = str(row["particle_id"]) + str(Volayer.get_RZ_slice(row["z"], row["x"], row["y"]))
-                    df.loc[index, "particle_id"] = tmp
-                    #print(df.loc[index, row["particle_id"]])
-                    #df.set_value(index, row['particle_id'], tmp)
-                    print(row["particle_id"])
-                    print(tmp)
+                if (Volayer.get_RZ_slice(row["z"], row["x"], row["y"])\
+                == Volayer.get_RZ_slice(row1["z"], row1["x"], row1["y"])) and (Volayer.get_phi_slice( row["x"], row["y"])\
+                == Volayer.get_phi_slice(row1["x"], row1["y"])):
+                    tmp = str((row["particle_id"])) + str(Volayer.get_RZ_slice(row["z"], row["x"], row["y"])[0]+1)\
+                                                        + str(Volayer.get_phi_slice(row["x"], row["y"])[0]+1)
+                    replace_truth_dict[row["hit_id"]] = tmp
+                    replacer_dict[index] = tmp
+
                 #r - z most well behaved here, append r-z index to particle ID
                 if row["layer_id"] == row1["layer_id"]:
                     if row["z"] - row1["z"] < 15:
@@ -135,6 +140,62 @@ def create_dataset(
 
                 # if r-z and x,y,z proximity criteria met, combine hits into one
                 continue
+
+
+    #Replace the truth file with the appended particle_id
+    replace_truth = pd.DataFrame({"hit_id": [], "particle_id": [], "tx": [], "ty": [], "tz": [], "tpx": [], "tpy": [] \
+            , "tpz": [], "weight": []})
+
+
+    for index_truth, row_truth in truth.iterrows():
+        for hit_id in replace_truth_dict:
+            if row_truth["hit_id"] == hit_id:
+                new_truth_row = {"hit_id": row_truth["hit_id"], "particle_id": replace_truth_dict[hit_id],\
+                                 "tx": row_truth["tx"], "ty": row_truth["ty"],\
+                                 "tz": row_truth["tz"], "tpx": row_truth["tpx"], "tpy": row_truth["tpy"] \
+                                 , "tpz": row_truth["tpz"], "weight": row_truth["weight"]}
+                replace_truth = replace_truth.append(new_truth_row, ignore_index=True)
+    replace_truth.set_index('hit_id', drop=False, inplace=True)
+
+
+    #Replace the hit file as well.
+    replace_hit = pd.DataFrame({"hit_id": [], "x": [], "y": [], "z": [], "truth": [], "volume_id": [] \
+            , "layer_id": [], "module_id": []})
+
+    for index_hit, row_hit in hits.iterrows():
+        for hit_id in replace_truth_dict:
+            if row_hit["hit_id"] == hit_id:
+                new_hit_row = {"hit_id": row_hit["hit_id"],\
+                                 "x": row_hit["x"], "y": row_hit["y"],\
+                                 "z": row_hit["z"], "truth": replace_truth_dict[hit_id],\
+                                 "volume_id": row_hit["volume_id"] \
+                                 , "layer_id": row_hit["layer_id"], "module_id": row_hit["module_id"]}
+
+                replace_hit = replace_hit.append(new_hit_row, ignore_index=True)
+    replace_hit.set_index('hit_id', drop=False, inplace=True)
+
+    #Replace the new split particles in the particle file.
+    particle_replacer = []
+    for key in replacer_dict:
+        df.at[key, "particle_id"] = replacer_dict[key]
+        particle_replacer.append(replacer_dict[key])
+
+    particle_replacer = set(particle_replacer)
+    particle_replacer_dict = {}
+    new_row = {}
+    for index, row in particles.iterrows():
+        for i in list(particle_replacer):
+            if row["particle_id"] == math.floor(int(float(i))):
+                new_row[i] = {"particle_id":i, "vx":row["vx"],"vy":row["vy"], "vz":row["vz"],\
+                           "px":row["px"],"py":row["py"],"pz":row["pz"],\
+                                 "q":row["q"],"nhits":row["nhits"]}
+    for j in new_row:
+        print(new_row[j])
+        particles = particles.append(new_row[j], ignore_index=True)
+    particles.set_index('particle_id', drop=False, inplace=True)
+    print(particles)
+    #particles = pd.DataFrame.from_dict(particle_replacer_dict, orient='index')
+    df = df.drop(['truth'], axis=1)
     logger.debug(f'Loaded {len(df)} hits from {input_path}.')
 
     # ---------- filter hits
@@ -156,9 +217,9 @@ def create_dataset(
 
     if not double_hits_ok:
         ## ATLAS
-        df.to_csv('/Users/parkerreid/hepqpr-qallse/src/hepqpr/qallse/pls.csv')
+        df.to_csv('/Users/parkerreid/hepqpr-qallse/src/hepqpr/qallse/pls1.csv')
         #df.drop_duplicates(['particle_id', 'layer_id'], keep='last', inplace=True)
-        #df.drop_duplicates(['particle_id', 'volume_id', 'layer_id'], keep='first', inplace=True)
+        df.drop_duplicates(['particle_id', 'volume_id', 'layer_id'], keep='first', inplace=True)
         logger.debug(f'Dropped double hits. Remaining hits: {len(df) + len(noise_df)}.')
 
     # ---------- sample tracks
@@ -166,8 +227,14 @@ def create_dataset(
     num_tracks = int(df.particle_id.nunique() * density)
     print(num_tracks)
     sampled_particle_ids = random.sample(df.particle_id.unique().tolist(), num_tracks)
+    temp_list=[]
+    for item in sampled_particle_ids:
+        temp_list.append(str(item))
+    sampled_particle_ids = temp_list
+    #convert each list item to string
+    print(type(sampled_particle_ids[0]))
     df = df[df.particle_id.isin(sampled_particle_ids)]
-
+    print(df.head)
     # ---------- sample noise
 
     num_noise = int(len(noise_df) * density)
@@ -177,8 +244,10 @@ def create_dataset(
     # ---------- recreate hits, particle and truth
 
     new_hit_ids = df.hit_id.values.tolist() + noise_df.hit_id.values.tolist()
-    new_hits = hits.loc[new_hit_ids]
-    new_truth = truth.loc[new_hit_ids]
+    new_hits = replace_hit.loc[new_hit_ids]
+    #new_hits = hits.loc[new_hit_ids]
+    new_truth = replace_truth.loc[new_hit_ids]
+
     new_particles = particles.loc[sampled_particle_ids]
 
     # ---------- fix truth
@@ -202,9 +271,9 @@ def create_dataset(
     os.makedirs(output_path, exist_ok=True)
     output_path = os.path.join(output_path, event_id)
 
-    new_hits.to_csv(output_path + '-hits.csv', index=False, float_format='%17.2f')
-    new_truth.to_csv(output_path + '-truth.csv', index=False, float_format='%17.2f')
-    new_particles.to_csv(output_path + '-particles.csv', index=False, float_format='%17.2f')
+    new_hits.to_csv(output_path + '-hits.csv', index=False, float_format='%24.4f')
+    new_truth.to_csv(output_path + '-truth.csv', index=False, float_format='%24.4f')
+    new_particles.to_csv(output_path + '-particles.csv', index=False, float_format='%24.4f')
 
     # ---------- write metadata
 
