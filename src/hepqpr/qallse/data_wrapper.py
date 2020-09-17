@@ -23,6 +23,8 @@ class DataWrapper:
         """
         self.hits = hits
         self.truth = truth
+        print(hits.hit_id)
+        print(hits)
 
         # add proper indexing
         for df in [self.hits, self.truth]:
@@ -118,7 +120,8 @@ class DataWrapper:
         if isinstance(doublets, pd.DataFrame): doublets = doublets.values
         doublets_found, _, unfocused_found = diff_rows(doublets, self._unfocused)
         missing, fakes, real = diff_rows(self._doublets, doublets_found)
-        return len(real) / len(doublets_found), \
+        print(len(real))
+        return len(real) / (len(doublets_found)), \
                len(real) / len(self._doublets), \
                missing
 
