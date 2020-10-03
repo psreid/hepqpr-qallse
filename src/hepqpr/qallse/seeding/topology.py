@@ -47,3 +47,25 @@ class DetectorModel:
             SiliconLayer(0, 1020., -1030, 1030),  # 17-4
         ]
         return det
+
+
+    @staticmethod
+    def buildModel_ITK():
+        """
+       ATLAS ITK geometry used in TTbar mu200 sample
+        """
+        det = DetectorModel()
+        # values from the ATLAS inner detector geometry, layerIdx 0 is the innerMost pixel layer
+        # order
+        det.layers = [
+            SiliconLayer(0, 39., -455, 455),  # 8-2
+            SiliconLayer(0, 99., -455, 455),  # 8-2
+            SiliconLayer(0, 160., -455, 455),  # 8-2
+            SiliconLayer(0, 228., -455, 455),  # 8-8
+            SiliconLayer(0, 291., -455, 455),  # 8-2
+            SiliconLayer(0, 405., -1030, 1030),  # 13-2
+            SiliconLayer(0, 562., -1030, 1030),  # 13-8
+            SiliconLayer(0, 762., -1030, 1030),  # 17-2
+            SiliconLayer(0, 1000., -1030, 1030),  # 17-4
+        ]
+        return det
